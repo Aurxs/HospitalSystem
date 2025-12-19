@@ -1,5 +1,5 @@
-#ifndef _DATASTRUCT_H_
-#define _DATASTRUCT_H_
+#ifndef DATASTRUCT_H_
+#define DATASTRUCT_H_
 
 #include <stdio.h>
 #include <stdlib.h>
