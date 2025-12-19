@@ -26,4 +26,5 @@ add_executable(RunTest
         src/ui.c
         tests/test_patient.c
         tests/test_doctor.c
+        tests/test.c
 )

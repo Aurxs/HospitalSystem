@@ -2,8 +2,8 @@
 #define TEST_H
 
 // 患者测试函数和变量声明
-extern int test_count;
-extern int pass_count;
+extern int test_count_patient;
+extern int pass_count_patient;
 void run_patient_tests();
 
 // 医生测试函数和变量声明

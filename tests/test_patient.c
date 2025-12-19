@@ -9,12 +9,12 @@
 #include "../include/patient.h"
 #include "test.h"
 
-int test_count = 0;
-int pass_count = 0;
+int test_count_patient = 0;
+int pass_count_patient = 0;
 
 void test_make_patient() {
     printf("测试 make_patient 函数...\n");
-    test_count++;
+    test_count_patient++;
 
     PatientNode patient = make_patient("张三", 30, "男", "13800138000", "感冒", "多休息");
 
@@ -26,13 +26,13 @@ void test_make_patient() {
     assert(strcmp(patient.treatment, "多休息") == 0);
     assert(patient.next == NULL);
 
-    pass_count++;
+    pass_count_patient++;
     printf("✓ make_patient 测试通过\n\n");
 }
 
 void test_add_patient() {
     printf("测试 add_patient 函数...\n");
-    test_count++;
+    test_count_patient++;
 
     PatientNode *head = NULL;
 
@@ -57,13 +57,13 @@ void test_add_patient() {
         free(temp);
     }
 
-    pass_count++;
+    pass_count_patient++;
     printf("✓ add_patient 测试通过\n\n");
 }
 
 void test_findPatient_name() {
     printf("测试 findPatient_name 函数...\n");
-    test_count++;
+    test_count_patient++;
 
     PatientNode *head = NULL;
 
@@ -89,13 +89,13 @@ void test_findPatient_name() {
         free(temp);
     }
 
-    pass_count++;
+    pass_count_patient++;
     printf("✓ findPatient_name 测试通过\n\n");
 }
 
 void test_findPatient_phone() {
     printf("测试 findPatient_phone 函数...\n");
-    test_count++;
+    test_count_patient++;
 
     PatientNode *head = NULL;
 
@@ -121,13 +121,13 @@ void test_findPatient_phone() {
         free(temp);
     }
 
-    pass_count++;
+    pass_count_patient++;
     printf("✓ findPatient_phone 测试通过\n\n");
 }
 
 void test_modify_patient() {
     printf("测试 modify_patient 函数...\n");
-    test_count++;
+    test_count_patient++;
 
     PatientNode *head = NULL;
 
@@ -155,13 +155,13 @@ void test_modify_patient() {
         free(temp);
     }
 
-    pass_count++;
+    pass_count_patient++;
     printf("✓ modify_patient 测试通过\n\n");
 }
 
 void test_delete_patient() {
     printf("测试 delete_patient 函数...\n");
-    test_count++;
+    test_count_patient++;
 
     PatientNode *head = NULL;
 
@@ -194,7 +194,7 @@ void test_delete_patient() {
         free(temp);
     }
 
-    pass_count++;
+    pass_count_patient++;
     printf("✓ delete_patient 测试通过\n\n");
 }
 
@@ -209,35 +209,6 @@ void run_patient_tests() {
     test_delete_patient();
 
     printf("========================================\n");
-    printf("患者模块测试完成: %d/%d 通过\n", pass_count, test_count);
+    printf("患者模块测试完成: %d/%d 通过\n", pass_count_patient, test_count_patient);
     printf("========================================\n\n");
-}
-
-int main() {
-    printf("\n");
-    printf("********************************************\n");
-    printf("*       医院管理系统单元测试程序           *\n");
-    printf("********************************************\n\n");
-
-    run_patient_tests();
-    run_doctor_tests();
-
-    int total_tests = test_count + test_count_doctor;
-    int total_passed = pass_count + pass_count_doctor;
-
-    printf("\n");
-    printf("============================================\n");
-    printf("           测试总结报告\n");
-    printf("============================================\n");
-    printf("总测试数: %d\n", total_tests);
-    printf("通过数: %d\n", total_passed);
-    printf("失败数: %d\n", total_tests - total_passed);
-    if (total_passed == total_tests) {
-        printf("状态: ✓ 全部通过\n");
-    } else {
-        printf("状态: ✗ 有测试失败\n");
-    }
-    printf("============================================\n\n");
-
-    return (total_passed == total_tests) ? 0 : 1;
 }
