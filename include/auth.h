@@ -1,0 +1,8 @@
+//
+// Created by 罗金源 on 2025/12/19.
+//
+
+#ifndef HOSPITALSYSTEM_AUTH_H
+#define HOSPITALSYSTEM_AUTH_H
+
+#endif //HOSPITALSYSTEM_AUTH_H
