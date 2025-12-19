@@ -3,9 +3,11 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "../include/patient.h"
+#include "test.h"
 
 int test_count = 0;
 int pass_count = 0;
@@ -210,11 +212,6 @@ void run_patient_tests() {
     printf("患者模块测试完成: %d/%d 通过\n", pass_count, test_count);
     printf("========================================\n\n");
 }
-
-// 声明医生测试函数
-extern void run_doctor_tests();
-extern int test_count_doctor;
-extern int pass_count_doctor;
 
 int main() {
     printf("\n");

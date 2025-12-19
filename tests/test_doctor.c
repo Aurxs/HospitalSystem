@@ -3,9 +3,11 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "../include/doctor.h"
+#include "test.h"
 
 int test_count_doctor = 0;
 int pass_count_doctor = 0;
