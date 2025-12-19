@@ -1,0 +1,4 @@
+/home/runner/work/HospitalSystem/HospitalSystem/_codeql_build_dir/CMakeFiles/HospitalSystem.dir
+/home/runner/work/HospitalSystem/HospitalSystem/_codeql_build_dir/CMakeFiles/RunTest.dir
+/home/runner/work/HospitalSystem/HospitalSystem/_codeql_build_dir/CMakeFiles/edit_cache.dir
+/home/runner/work/HospitalSystem/HospitalSystem/_codeql_build_dir/CMakeFiles/rebuild_cache.dir
