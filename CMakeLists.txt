@@ -18,7 +18,6 @@ set(SOURCE_FILES
 add_executable(HospitalSystem ${SOURCE_FILES})
 
 add_executable(RunTest
-        test.c
         src/patient.c
         src/doctor.c
         src/drug.c
