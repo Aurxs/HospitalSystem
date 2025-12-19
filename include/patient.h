@@ -4,11 +4,24 @@
 #include "datastruct.h"
 
 /**
+ * 功能：构造一个患者记录
+ * 参数：name - 患者姓名
+ *       age - 患者年龄
+ *       gender - 患者性别
+ *       phone - 患者电话号码
+ *       diagnosis - 诊断结果
+ *       treatment - 治疗方案
+ * 返回值：构造好的患者节点（按值返回）
+*/
+PatientNode make_patient(const char *name, int age, const char *gender,
+                         const char *phone, const char *diagnosis, const char *treatment);
+
+/**
  * 功能：添加一个新患者
  * 参数：head - 链表头指针
          newInfo - 包含新患者信息的结构体
  */
-void add_patient(PatientNode *head, const PatientNode *newInfo);
+PatientNode *add_patient(PatientNode **head, PatientNode newInfo);
 
 /**
  * 功能：通过姓名查找患者
@@ -33,7 +46,7 @@ PatientNode *findPatient_phone(PatientNode *head, const char *phone);
  *       newInfo - 包含更新后患者信息的结构体
  * 返回值：修改的患者节点指针，未找到返回 NULL
  */
-void modify_patient(PatientNode *head, const char *phone, const PatientNode *newInfo);
+PatientNode *modify_patient(PatientNode *head, const char *phone, PatientNode newInfo);
 
 /**
  * 功能：删除患者信息

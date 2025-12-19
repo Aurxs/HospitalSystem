@@ -66,4 +66,4 @@ typedef struct BillNode {
     struct BillNode* next;
 } BillNode;
 
-#endif // _DATASTRUCT_H_ 结束
+#endif // DATASTRUCT_H_

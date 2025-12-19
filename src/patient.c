@@ -1,14 +1,30 @@
 #include <stdio.h>
-#include <stdlib.h> // 使用 malloc 需要
-#include <string.h> // 使用 strcpy 需要
+#include <stdlib.h>
+#include <string.h>
 #include "../include/datastruct.h"
+#include "../include/patient.h"
+
+// 工具: 构造一个患者记录（按值返回，便于直接传给 addPatient/modifyPatient）
+PatientNode make_patient(const char *name, int age, const char *gender,
+                         const char *phone, const char *diagnosis, const char *treatment) {
+    PatientNode p;
+    memset(&p, 0, sizeof(p));
+    snprintf(p.name, sizeof(p.name), "%s", name);
+    p.age = age;
+    snprintf(p.gender, sizeof(p.gender), "%s", gender);
+    snprintf(p.phone, sizeof(p.phone), "%s", phone);
+    snprintf(p.diagnosis, sizeof(p.diagnosis), "%s", diagnosis);
+    snprintf(p.treatment, sizeof(p.treatment), "%s", treatment);
+    p.next = NULL;
+    return p;
+}
 
 // 添加病人（尾插法）
-void addPatient(PatientNode **head, const PatientNode newInfo) {
+PatientNode *add_patient(PatientNode **head, const PatientNode newInfo) {
     PatientNode *newNode = (PatientNode *) malloc(sizeof(PatientNode));
     if (newNode == NULL) {
         printf("内存分配失败！\n");
-        return;
+        return NULL;
     }
 
     //将新数据填入临时结构体newNode
@@ -33,8 +49,7 @@ void addPatient(PatientNode **head, const PatientNode newInfo) {
         //将数据插入到尾指针的next指针
         temp->next = newNode;
     }
-
-    printf("成功添加病人：%s\n", newNode->name);
+    return newNode;
 }
 
 //通过名字查询患者信息
@@ -62,7 +77,7 @@ PatientNode *findPatient_phone(PatientNode *head, const char *phone) {
 }
 
 //修改患者信息
-PatientNode *modifyPatient(PatientNode *head, const char *phone, const PatientNode newInfo) {
+PatientNode *modify_patient(PatientNode *head, const char *phone, const PatientNode newInfo) {
     PatientNode *current = head;
     while (current != NULL) {
         if (strcmp(current->phone, phone) == 0) {
@@ -73,15 +88,15 @@ PatientNode *modifyPatient(PatientNode *head, const char *phone, const PatientNo
             strcpy(current->phone, newInfo.phone);
             strcpy(current->diagnosis, newInfo.diagnosis);
             strcpy(current->treatment, newInfo.treatment);
-            return current;// 返回修改后的节点指针
+            return current; // 返回修改后的节点指针
         }
         current = current->next; // 继续下一个节点
     }
-    return NULL;// 没有找到，返回 NULL
+    return NULL; // 没有找到，返回 NULL
 }
 
 //删除患者信息
-PatientNode *deletePatient(PatientNode *head, const char *phone) {
+PatientNode *delete_patient(PatientNode *head, const char *phone) {
     PatientNode *current = head;
     PatientNode *previous = NULL;
 
