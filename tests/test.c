@@ -11,9 +11,10 @@ int main() {
 
     run_patient_tests();
     run_doctor_tests();
+    run_drug_tests();
 
-    int total_tests = test_count_patient + test_count_doctor;
-    int total_passed = pass_count_patient + pass_count_doctor;
+    int total_tests = test_count_patient + test_count_doctor + test_count_drug;
+    int total_passed = pass_count_patient + pass_count_doctor + pass_count_drug;
 
     printf("\n");
     printf("============================================\n");

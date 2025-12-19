@@ -27,4 +27,5 @@ add_executable(RunTest
         tests/test_patient.c
         tests/test_doctor.c
         tests/test.c
+        tests/test_drug.c
 )

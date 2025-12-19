@@ -11,4 +11,8 @@ extern int test_count_doctor;
 extern int pass_count_doctor;
 void run_doctor_tests();
 
+extern int test_count_drug;
+extern int pass_count_drug;
+void run_drug_tests();
+
 #endif // TEST_H
