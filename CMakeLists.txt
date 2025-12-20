@@ -13,6 +13,8 @@ set(SOURCE_FILES
         src/file_io.c
         src/auth.c
         src/ui.c
+        src/registration.c
+        src/bill.c
 )
 
 add_executable(HospitalSystem ${SOURCE_FILES})
@@ -24,8 +26,13 @@ add_executable(RunTest
         src/file_io.c
         src/auth.c
         src/ui.c
+        src/registration.c
+        src/bill.c
         tests/test_patient.c
         tests/test_doctor.c
         tests/test.c
         tests/test_drug.c
+        tests/test_registration.c
+        tests/test_bill.c
+        tests/test_file_io.c
 )
