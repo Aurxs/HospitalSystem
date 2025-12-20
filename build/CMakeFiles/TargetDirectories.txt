@@ -1,0 +1,4 @@
+/home/runner/work/HospitalSystem/HospitalSystem/build/CMakeFiles/HospitalSystem.dir
+/home/runner/work/HospitalSystem/HospitalSystem/build/CMakeFiles/RunTest.dir
+/home/runner/work/HospitalSystem/HospitalSystem/build/CMakeFiles/edit_cache.dir
+/home/runner/work/HospitalSystem/HospitalSystem/build/CMakeFiles/rebuild_cache.dir
