@@ -9,14 +9,10 @@
 // 使用 0xAA 作为异或密钥，避免生成 '\0' (针对 ASCII 可打印字符)
 #define XOR_KEY 0xAA
 
-/**
- * 内部辅助函数：异或加密/解密
- * 注意：output 必须有足够的空间 (至少 MAX_NAME)
- */
 void cipher(const char *input, char *output) {
     int i;
     for (i = 0; i < MAX_NAME - 1 && input[i] != '\0'; i++) {
-        output[i] = (char)(input[i] ^ XOR_KEY);
+        output[i] = (char) (input[i] ^ XOR_KEY);
     }
     output[i] = '\0';
 }
@@ -42,7 +38,7 @@ AuthNode *add_user(AuthNode **head, AuthNode newInfo) {
         return NULL;
     }
 
-    AuthNode *newNode = (AuthNode *)malloc(sizeof(AuthNode));
+    AuthNode *newNode = (AuthNode *) malloc(sizeof(AuthNode));
     if (newNode == NULL) {
         return NULL;
     }

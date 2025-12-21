@@ -3,6 +3,8 @@
 
 #include "datastruct.h"
 
+#define XOR_KEY 0xAA
+
 /**
  *功能：构建一个用户节点
  *参数：username - 用户名
