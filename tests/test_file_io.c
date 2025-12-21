@@ -13,6 +13,7 @@
 #include "../include/drug.h"
 #include "../include/registration.h"
 #include "../include/bill.h"
+#include "../include/auth.h"
 #include "test.h"
 
 int test_count_file_io = 0;
@@ -274,6 +275,54 @@ void test_load_nonexistent_file() {
     printf("✓ 加载不存在的文件 测试通过\n\n");
 }
 
+void test_save_load_users() {
+    printf("测试 save_users/load_users 函数...\n");
+    test_count_file_io++;
+
+    // 创建用户链表
+    AuthNode *head = NULL;
+    AuthNode u1 = make_user("admin", "admin123");
+    AuthNode u2 = make_user("guest", "guest123");
+    add_user(&head, u1);
+    add_user(&head, u2);
+
+    // 保存到文件
+    #define TEST_AUTH_FILE "/tmp/test_auth.dat"
+    int result = save_users(TEST_AUTH_FILE, head);
+    assert(result == 1);
+
+    // 从文件读取
+    AuthNode *loadedHead = load_users(TEST_AUTH_FILE);
+    assert(loadedHead != NULL);
+
+    // 验证数据
+    AuthNode *found = find_user(loadedHead, "admin");
+    assert(found != NULL);
+    assert(authenticate_user(loadedHead, "admin", "admin123") == 1);
+
+    found = find_user(loadedHead, "guest");
+    assert(found != NULL);
+    assert(authenticate_user(loadedHead, "guest", "guest123") == 1);
+
+    // 清理内存
+    while (head != NULL) {
+        AuthNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+    while (loadedHead != NULL) {
+        AuthNode *temp = loadedHead;
+        loadedHead = loadedHead->next;
+        free(temp);
+    }
+
+    // 删除测试文件
+    remove(TEST_AUTH_FILE);
+
+    pass_count_file_io++;
+    printf("✓ save_users/load_users 测试通过\n\n");
+}
+
 void run_file_io_tests() {
     printf("========== 文件读写模块测试 ==========\n\n");
 
@@ -282,6 +331,7 @@ void run_file_io_tests() {
     test_save_load_drugs();
     test_save_load_registrations();
     test_save_load_bills();
+    test_save_load_users();
     test_load_nonexistent_file();
 
     printf("========================================\n");

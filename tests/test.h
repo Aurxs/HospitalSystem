@@ -30,4 +30,9 @@ extern int test_count_file_io;
 extern int pass_count_file_io;
 void run_file_io_tests();
 
+// Auth 测试函数和变量声明
+extern int test_count_auth;
+extern int pass_count_auth;
+void run_auth_tests();
+
 #endif // TEST_H

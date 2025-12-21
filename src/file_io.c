@@ -6,6 +6,8 @@
 #include <string.h>
 #include "../include/datastruct.h"
 #include "../include/file_io.h"
+
+#include "../include/auth.h"
 #include "../include/patient.h"
 #include "../include/doctor.h"
 #include "../include/drug.h"
@@ -372,6 +374,61 @@ BillNode *load_bills(const char *filename) {
         add_bill(&head, b);
     }
 
+    fclose(fp);
+    return head;
+}
+
+//================== 用户登录信息保存与读取 ==================
+
+// 保存用户链表到文件
+int save_users(const char *filename, AuthNode *head) {
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL) {
+        printf("无法打开文件 %s 进行写入！\n", filename);
+        return 0;
+    }
+    AuthNode *current = head;
+    while (current != NULL) {
+        fprintf(fp, "%s|%s\n",
+                current->username,
+                current->password);
+        current = current->next;
+    }
+    fclose(fp);
+    return 1;
+}
+
+// 从文件读取用户链表
+AuthNode *load_users(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        return NULL;
+    }
+    AuthNode *head = NULL;
+    char line[256];
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        // 移除换行符
+        line[strcspn(line, "\n")] = 0;
+        char username[MAX_NAME], password[MAX_NAME];
+        // 解析数据
+        char *token = strtok(line, "|");
+        if (token == NULL) continue;
+        strncpy(username, token, MAX_NAME - 1);
+        username[MAX_NAME - 1] = '\0';
+        token = strtok(NULL, "|");
+        if (token == NULL) continue;
+        strncpy(password, token, MAX_NAME - 1);
+        password[MAX_NAME - 1] = '\0';
+
+        // 直接构造节点，避免 make_user 再次加密
+        AuthNode a;
+        memset(&a, 0, sizeof(AuthNode));
+        strncpy(a.username, username, MAX_NAME - 1);
+        strncpy(a.password, password, MAX_NAME - 1);
+        a.next = NULL;
+
+        add_user(&head, a);
+    }
     fclose(fp);
     return head;
 }

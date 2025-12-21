@@ -15,11 +15,12 @@ int main() {
     run_registration_tests();
     run_bill_tests();
     run_file_io_tests();
+    run_auth_tests();
 
     int total_tests = test_count_patient + test_count_doctor + test_count_drug
-                    + test_count_registration + test_count_bill + test_count_file_io;
+                    + test_count_registration + test_count_bill + test_count_file_io + test_count_auth;
     int total_passed = pass_count_patient + pass_count_doctor + pass_count_drug
-                     + pass_count_registration + pass_count_bill + pass_count_file_io;
+                     + pass_count_registration + pass_count_bill + pass_count_file_io + pass_count_auth;
 
     printf("\n");
     printf("============================================\n");

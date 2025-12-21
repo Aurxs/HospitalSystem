@@ -78,4 +78,19 @@ int save_bills(const char *filename, BillNode *head);
  */
 BillNode *load_bills(const char *filename);
 
+/**
+ * 功能：保存用户链表到文件
+ * 参数：filename - 文件名
+ *       head - 用户链表头指针
+ * 返回值：成功返回1，失败返回0
+ */
+int save_users(const char *filename, AuthNode *head);
+
+/**
+ * 功能：从文件读取用户链表
+ * 参数：filename - 文件名
+ * 返回值：读取的用户链表头指针，失败返回NULL
+ */
+AuthNode *load_users(const char *filename);
+
 #endif // FILE_IO_H

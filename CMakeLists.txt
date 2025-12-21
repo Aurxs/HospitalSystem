@@ -35,4 +35,5 @@ add_executable(RunTest
         tests/test_registration.c
         tests/test_bill.c
         tests/test_file_io.c
+        tests/test_auth.c
 )

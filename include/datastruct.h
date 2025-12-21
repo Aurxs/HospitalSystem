@@ -66,4 +66,12 @@ typedef struct BillNode {
     struct BillNode* next;
 } BillNode;
 
+// 6. 登录信息节点 (Auth)
+typedef struct AuthNode {
+    char username[MAX_NAME];    // 用户名
+    char password[MAX_NAME];    // 密码 (加密存储)
+
+    struct AuthNode* next;
+} AuthNode;
+
 #endif // DATASTRUCT_H_
