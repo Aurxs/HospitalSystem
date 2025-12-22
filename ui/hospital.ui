@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkWindow" id="main_window">
+    <property name="title">医院管理系统</property>
+    <property name="default-width">800</property>
+    <property name="default-height">600</property>
+    <child>
+      <object class="GtkBox" id="root_box">
+        <property name="orientation">vertical</property>
+
+        <!-- Login Screen -->
+        <child>
+          <object class="GtkBox" id="login_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">10</property>
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <property name="vexpand">True</property>
+            <property name="hexpand">True</property>
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="label">系统登录</property>
+                <style>
+                  <class name="title-1"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="login_username">
+                <property name="placeholder-text">用户名</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="login_password">
+                <property name="placeholder-text">密码</property>
+                <property name="visibility">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="login_button">
+                <property name="label">登录</property>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <!-- Main App Content -->
+        <child>
+          <object class="GtkBox" id="main_app_box">
+            <property name="orientation">horizontal</property>
+            <property name="visible">False</property>
+            <property name="vexpand">True</property>
+
+            <!-- Sidebar -->
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <property name="spacing">5</property>
+                <property name="width-request">150</property>
+                <child>
+                  <object class="GtkStackSwitcher">
+                    <property name="stack">main_stack</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="logout_button">
+                    <property name="label">注销 (Logout)</property>
+                    <property name="valign">end</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+
+            <!-- Content Stack -->
+            <child>
+              <object class="GtkStack" id="main_stack">
+                <property name="hexpand">True</property>
+
+                <!-- Welcome Page -->
+                <child>
+                  <object class="GtkStackPage">
+                    <property name="name">home</property>
+                    <property name="title">首页</property>
+                    <property name="child">
+                      <object class="GtkLabel">
+                        <property name="label">欢迎使用医院管理系统</property>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+
+                <!-- Patient View -->
+                <child>
+                  <object class="GtkStackPage">
+                    <property name="name">patients</property>
+                    <property name="title">患者管理</property>
+                    <property name="child">
+                      <object class="GtkBox" id="patient_view_box">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">5</property>
+                        <child>
+                           <object class="GtkLabel">
+                             <property name="label">患者管理 (Patient Management)</property>
+                           </object>
+                        </child>
+                        <child>
+                           <object class="GtkBox" id="patient_toolbar">
+                             <property name="orientation">horizontal</property>
+                             <property name="spacing">5</property>
+                           </object>
+                        </child>
+                        <child>
+                           <object class="GtkScrolledWindow">
+                             <property name="vexpand">True</property>
+                             <child>
+                               <object class="GtkColumnView" id="patient_list_view">
+                               </object>
+                             </child>
+                           </object>
+                        </child>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+
+                <!-- Doctor View -->
+                <child>
+                  <object class="GtkStackPage">
+                    <property name="name">doctors</property>
+                    <property name="title">医生列表</property>
+                    <property name="child">
+                      <object class="GtkBox" id="doctor_view_box">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">5</property>
+                        <child>
+                           <object class="GtkLabel">
+                             <property name="label">医生管理 (Doctor Management)</property>
+                           </object>
+                        </child>
+                        <child>
+                           <object class="GtkBox" id="doctor_toolbar">
+                             <property name="orientation">horizontal</property>
+                             <property name="spacing">5</property>
+                           </object>
+                        </child>
+                        <child>
+                           <object class="GtkScrolledWindow">
+                             <property name="vexpand">True</property>
+                             <child>
+                               <object class="GtkColumnView" id="doctor_list_view">
+                               </object>
+                             </child>
+                           </object>
+                        </child>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+
+              </object>
+            </child>
+          </object>
+        </child>
+
+      </object>
+    </child>
+  </object>
+</interface>
+

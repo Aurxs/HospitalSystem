@@ -18,10 +18,14 @@ typedef struct {
     AuthNode *users;
     AuthNode *currentUser;
 
+    GtkBuilder *builder;
     GtkWidget *window;
     GtkWidget *login_box;
-    GtkWidget *main_box;
+    GtkWidget *main_app_box;
     GtkWidget *stack;
+
+    GtkWidget *login_username;
+    GtkWidget *login_password;
 } AppData;
 
 AppData app_data;
@@ -383,19 +387,19 @@ void on_delete_doctor_clicked(GtkWidget *btn, gpointer data) {
 
 // --- UI Construction ---
 
-GtkWidget* create_patient_view() {
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    GtkWidget *label = gtk_label_new("患者管理 (Patient Management)");
-    gtk_box_append(GTK_BOX(box), label);
+void setup_patient_view() {
+    GtkWidget *list_view = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "patient_list_view"));
+    GtkWidget *toolbar = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "patient_toolbar"));
 
-    // Toolbar
-    GtkWidget *toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_box_append(GTK_BOX(box), toolbar);
+    // Clear toolbar
+    GtkWidget *child = gtk_widget_get_first_child(toolbar);
+    while (child) {
+        GtkWidget *next = gtk_widget_get_next_sibling(child);
+        gtk_box_remove(GTK_BOX(toolbar), child);
+        child = next;
+    }
 
-    GtkWidget *scrolled = gtk_scrolled_window_new();
-    gtk_widget_set_vexpand(scrolled, TRUE);
-    gtk_box_append(GTK_BOX(box), scrolled);
-
+    // Setup List Model
     GtkStringList *string_list = gtk_string_list_new(NULL);
     PatientNode *curr = app_data.patients;
     while(curr) {
@@ -407,16 +411,19 @@ GtkWidget* create_patient_view() {
     }
 
     GtkSingleSelection *selection_model = gtk_single_selection_new(G_LIST_MODEL(string_list));
-    GtkWidget *list_view = gtk_column_view_new(GTK_SELECTION_MODEL(selection_model));
+    gtk_column_view_set_model(GTK_COLUMN_VIEW(list_view), GTK_SELECTION_MODEL(selection_model));
 
-    GtkListItemFactory *factory = gtk_signal_list_item_factory_new();
-    g_signal_connect(factory, "setup", G_CALLBACK(setup_list_item), NULL);
-    g_signal_connect(factory, "bind", G_CALLBACK(bind_list_item), NULL);
+    // Setup Columns
+    GtkColumnViewColumn *col = gtk_column_view_get_columns(GTK_COLUMN_VIEW(list_view)) ? g_list_model_get_item(gtk_column_view_get_columns(GTK_COLUMN_VIEW(list_view)), 0) : NULL;
 
-    GtkColumnViewColumn *column = gtk_column_view_column_new("信息 (姓名 | 年龄 | 性别 | 电话 | 诊断 | 治疗)", factory);
-    gtk_column_view_append_column(GTK_COLUMN_VIEW(list_view), column);
+    if (!col) {
+        GtkListItemFactory *factory = gtk_signal_list_item_factory_new();
+        g_signal_connect(factory, "setup", G_CALLBACK(setup_list_item), NULL);
+        g_signal_connect(factory, "bind", G_CALLBACK(bind_list_item), NULL);
 
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), list_view);
+        GtkColumnViewColumn *column = gtk_column_view_column_new("信息 (姓名 | 年龄 | 性别 | 电话 | 诊断 | 治疗)", factory);
+        gtk_column_view_append_column(GTK_COLUMN_VIEW(list_view), column);
+    }
 
     // Buttons
     if (app_data.currentUser->role == 0 || app_data.currentUser->role == 1) {
@@ -432,22 +439,21 @@ GtkWidget* create_patient_view() {
         g_signal_connect(btn_del, "clicked", G_CALLBACK(on_delete_patient_clicked), selection_model);
         gtk_box_append(GTK_BOX(toolbar), btn_del);
     }
-
-    return box;
 }
 
-GtkWidget* create_doctor_view() {
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_box_append(GTK_BOX(box), gtk_label_new("医生管理 (Doctor Management)"));
+void setup_doctor_view() {
+    GtkWidget *list_view = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "doctor_list_view"));
+    GtkWidget *toolbar = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "doctor_toolbar"));
 
-    // Toolbar
-    GtkWidget *toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_box_append(GTK_BOX(box), toolbar);
+    // Clear toolbar
+    GtkWidget *child = gtk_widget_get_first_child(toolbar);
+    while (child) {
+        GtkWidget *next = gtk_widget_get_next_sibling(child);
+        gtk_box_remove(GTK_BOX(toolbar), child);
+        child = next;
+    }
 
-    GtkWidget *scrolled = gtk_scrolled_window_new();
-    gtk_widget_set_vexpand(scrolled, TRUE);
-    gtk_box_append(GTK_BOX(box), scrolled);
-
+    // Setup List Model
     GtkStringList *string_list = gtk_string_list_new(NULL);
     DoctorNode *curr = app_data.doctors;
     while(curr) {
@@ -459,16 +465,19 @@ GtkWidget* create_doctor_view() {
     }
 
     GtkSingleSelection *selection_model = gtk_single_selection_new(G_LIST_MODEL(string_list));
-    GtkWidget *list_view = gtk_column_view_new(GTK_SELECTION_MODEL(selection_model));
+    gtk_column_view_set_model(GTK_COLUMN_VIEW(list_view), GTK_SELECTION_MODEL(selection_model));
 
-    GtkListItemFactory *factory = gtk_signal_list_item_factory_new();
-    g_signal_connect(factory, "setup", G_CALLBACK(setup_list_item), NULL);
-    g_signal_connect(factory, "bind", G_CALLBACK(bind_list_item), NULL);
+    // Setup Columns
+    GtkColumnViewColumn *col = gtk_column_view_get_columns(GTK_COLUMN_VIEW(list_view)) ? g_list_model_get_item(gtk_column_view_get_columns(GTK_COLUMN_VIEW(list_view)), 0) : NULL;
 
-    GtkColumnViewColumn *column = gtk_column_view_column_new("信息 (姓名 | 年龄 | 性别 | 科室 | 电话)", factory);
-    gtk_column_view_append_column(GTK_COLUMN_VIEW(list_view), column);
+    if (!col) {
+        GtkListItemFactory *factory = gtk_signal_list_item_factory_new();
+        g_signal_connect(factory, "setup", G_CALLBACK(setup_list_item), NULL);
+        g_signal_connect(factory, "bind", G_CALLBACK(bind_list_item), NULL);
 
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), list_view);
+        GtkColumnViewColumn *column = gtk_column_view_column_new("信息 (姓名 | 年龄 | 性别 | 科室 | 电话)", factory);
+        gtk_column_view_append_column(GTK_COLUMN_VIEW(list_view), column);
+    }
 
     // Buttons (Only for Admin)
     if (app_data.currentUser->role == 0) {
@@ -484,61 +493,36 @@ GtkWidget* create_doctor_view() {
         g_signal_connect(btn_del, "clicked", G_CALLBACK(on_delete_doctor_clicked), selection_model);
         gtk_box_append(GTK_BOX(toolbar), btn_del);
     }
-
-    return box;
 }
 
 void show_main_window() {
-    // Clear existing children of window
-    GtkWidget *child = gtk_window_get_child(GTK_WINDOW(app_data.window));
-    if (child) {
-        gtk_window_set_child(GTK_WINDOW(app_data.window), NULL);
-    }
+    gtk_widget_set_visible(app_data.login_box, FALSE);
+    gtk_widget_set_visible(app_data.main_app_box, TRUE);
 
-    app_data.main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_window_set_child(GTK_WINDOW(app_data.window), app_data.main_box);
+    setup_patient_view();
+    setup_doctor_view();
 
-    // Sidebar
-    GtkWidget *sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_widget_set_size_request(sidebar, 150, -1);
-    gtk_box_append(GTK_BOX(app_data.main_box), sidebar);
+    GtkWidget *patient_page = gtk_stack_get_child_by_name(GTK_STACK(app_data.stack), "patients");
+    GtkWidget *doctor_page = gtk_stack_get_child_by_name(GTK_STACK(app_data.stack), "doctors");
 
-    GtkWidget *stack = gtk_stack_new();
-    app_data.stack = stack;
-    gtk_widget_set_hexpand(stack, TRUE);
-    gtk_box_append(GTK_BOX(app_data.main_box), stack);
-
-    GtkWidget *stack_switcher = gtk_stack_switcher_new();
-    gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(stack_switcher), GTK_STACK(stack));
-    gtk_box_append(GTK_BOX(sidebar), stack_switcher);
-
-    // Logout button
-    GtkWidget *logout_btn = gtk_button_new_with_label("注销 (Logout)");
-    gtk_widget_set_valign(logout_btn, GTK_ALIGN_END);
-    gtk_widget_set_vexpand(logout_btn, TRUE);
-    g_signal_connect_swapped(logout_btn, "clicked", G_CALLBACK(show_login_screen), NULL); // Simplified logout
-    gtk_box_append(GTK_BOX(sidebar), logout_btn);
-
-    // Add pages based on role
     int role = app_data.currentUser->role; // 0: Admin, 1: Doctor, 2: Patient
 
     if (role == 0 || role == 1) {
-        gtk_stack_add_titled(GTK_STACK(stack), create_patient_view(), "patients", "患者管理");
+        gtk_widget_set_visible(patient_page, TRUE);
+    } else {
+        gtk_widget_set_visible(patient_page, FALSE);
     }
 
     if (role == 0 || role == 2) {
-        gtk_stack_add_titled(GTK_STACK(stack), create_doctor_view(), "doctors", "医生列表");
+        gtk_widget_set_visible(doctor_page, TRUE);
+    } else {
+        gtk_widget_set_visible(doctor_page, FALSE);
     }
-
-    // Add more views as needed...
-    GtkWidget *welcome = gtk_label_new("欢迎使用医院管理系统");
-    gtk_stack_add_titled(GTK_STACK(stack), welcome, "home", "首页");
 }
 
 void on_login_clicked(GtkWidget *widget, gpointer data) {
-    GtkWidget **entries = (GtkWidget **)data;
-    const char *username = gtk_editable_get_text(GTK_EDITABLE(entries[0]));
-    const char *password = gtk_editable_get_text(GTK_EDITABLE(entries[1]));
+    const char *username = gtk_editable_get_text(GTK_EDITABLE(app_data.login_username));
+    const char *password = gtk_editable_get_text(GTK_EDITABLE(app_data.login_password));
 
     if (authenticate_user(app_data.users, username, password)) {
         app_data.currentUser = find_user(app_data.users, username);
@@ -549,48 +533,36 @@ void on_login_clicked(GtkWidget *widget, gpointer data) {
 }
 
 void show_login_screen(GtkApplication *app) {
-    // If window already exists, just clear it
-    if (app_data.window == NULL) {
-        app_data.window = gtk_application_window_new(app);
-        gtk_window_set_title(GTK_WINDOW(app_data.window), "医院管理系统");
-        gtk_window_set_default_size(GTK_WINDOW(app_data.window), 800, 600);
-    } else {
-        gtk_window_set_child(GTK_WINDOW(app_data.window), NULL);
-    }
+    gtk_widget_set_visible(app_data.login_box, TRUE);
+    gtk_widget_set_visible(app_data.main_app_box, FALSE);
 
-    app_data.login_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_halign(app_data.login_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(app_data.login_box, GTK_ALIGN_CENTER);
+    // Clear entries
+    gtk_editable_set_text(GTK_EDITABLE(app_data.login_username), "");
+    gtk_editable_set_text(GTK_EDITABLE(app_data.login_password), "");
 
-    GtkWidget *title = gtk_label_new("系统登录");
-    gtk_widget_add_css_class(title, "title-1");
-    gtk_box_append(GTK_BOX(app_data.login_box), title);
-
-    GtkWidget *user_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(user_entry), "用户名");
-    gtk_box_append(GTK_BOX(app_data.login_box), user_entry);
-
-    GtkWidget *pass_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(pass_entry), "密码");
-    gtk_entry_set_visibility(GTK_ENTRY(pass_entry), FALSE);
-    gtk_box_append(GTK_BOX(app_data.login_box), pass_entry);
-
-    GtkWidget *login_btn = gtk_button_new_with_label("登录");
-
-    // Pass entries to callback
-    GtkWidget **entries = g_new(GtkWidget*, 2);
-    entries[0] = user_entry;
-    entries[1] = pass_entry;
-
-    g_signal_connect(login_btn, "clicked", G_CALLBACK(on_login_clicked), entries);
-    gtk_box_append(GTK_BOX(app_data.login_box), login_btn);
-
-    gtk_window_set_child(GTK_WINDOW(app_data.window), app_data.login_box);
     gtk_window_present(GTK_WINDOW(app_data.window));
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {
     load_all_data();
+
+    app_data.builder = gtk_builder_new_from_file("ui/hospital.ui");
+    app_data.window = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "main_window"));
+    gtk_window_set_application(GTK_WINDOW(app_data.window), app);
+
+    app_data.login_box = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "login_box"));
+    app_data.main_app_box = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "main_app_box"));
+    app_data.stack = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "main_stack"));
+
+    app_data.login_username = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "login_username"));
+    app_data.login_password = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "login_password"));
+
+    GtkWidget *login_btn = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "login_button"));
+    g_signal_connect(login_btn, "clicked", G_CALLBACK(on_login_clicked), NULL);
+
+    GtkWidget *logout_btn = GTK_WIDGET(gtk_builder_get_object(app_data.builder, "logout_button"));
+    g_signal_connect_swapped(logout_btn, "clicked", G_CALLBACK(show_login_screen), NULL);
+
     show_login_screen(app);
 }
 
