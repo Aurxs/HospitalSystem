@@ -9,9 +9,10 @@
  *功能：构建一个用户节点
  *参数：username - 用户名
  *      password - 密码
+ *      role - 权限角色
  *返回值：构造好的用户节点指针
  */
-AuthNode make_user(const char *username, const char *password);
+AuthNode make_user(const char *username, const char *password, int role);
 
 /**
  * 功能：添加一个新用户

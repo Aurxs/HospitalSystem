@@ -389,9 +389,10 @@ int save_users(const char *filename, AuthNode *head) {
     }
     AuthNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%s\n",
+        fprintf(fp, "%s|%s|%d\n",
                 current->username,
-                current->password);
+                current->password,
+                current->role);
         current = current->next;
     }
     fclose(fp);
@@ -410,6 +411,7 @@ AuthNode *load_users(const char *filename) {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
         char username[MAX_NAME], password[MAX_NAME];
+        int role = 0;
         // 解析数据
         char *token = strtok(line, "|");
         if (token == NULL) continue;
@@ -420,11 +422,17 @@ AuthNode *load_users(const char *filename) {
         strncpy(password, token, MAX_NAME - 1);
         password[MAX_NAME - 1] = '\0';
 
+        token = strtok(NULL, "|");
+        if (token != NULL) {
+            role = atoi(token);
+        }
+
         // 直接构造节点，避免 make_user 再次加密
         AuthNode a;
         memset(&a, 0, sizeof(AuthNode));
         strncpy(a.username, username, MAX_NAME - 1);
         strncpy(a.password, password, MAX_NAME - 1);
+        a.role = role;
         a.next = NULL;
 
         add_user(&head, a);
