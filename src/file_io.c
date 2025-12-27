@@ -389,9 +389,10 @@ int save_users(const char *filename, AuthNode *head) {
     }
     AuthNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%s\n",
+        fprintf(fp, "%s|%s|%d\n",
                 current->username,
-                current->password);
+                current->password,
+                current->role);
         current = current->next;
     }
     fclose(fp);

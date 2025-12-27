@@ -281,8 +281,8 @@ void test_save_load_users() {
 
     // 创建用户链表
     AuthNode *head = NULL;
-    AuthNode u1 = make_user("admin", "admin123");
-    AuthNode u2 = make_user("guest", "guest123");
+    AuthNode u1 = make_user("admin", "admin123", 0);
+    AuthNode u2 = make_user("guest", "guest123", 2);
     add_user(&head, u1);
     add_user(&head, u2);
 

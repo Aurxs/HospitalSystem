@@ -70,6 +70,7 @@ typedef struct BillNode {
 typedef struct AuthNode {
     char username[MAX_NAME];    // 用户名
     char password[MAX_NAME];    // 密码 (加密存储)
+    int role;                   // 权限角色: 0-管理员, 1-医生, 2-患者
 
     struct AuthNode* next;
 } AuthNode;

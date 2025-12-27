@@ -17,7 +17,7 @@ void cipher(const char *input, char *output) {
     output[i] = '\0';
 }
 
-AuthNode make_user(const char *username, const char *password) {
+AuthNode make_user(const char *username, const char *password, int role) {
     AuthNode node;
     // 初始化内存
     memset(&node, 0, sizeof(AuthNode));
@@ -27,6 +27,8 @@ AuthNode make_user(const char *username, const char *password) {
 
     // 加密密码
     cipher(password, node.password);
+
+    node.role = role;
 
     node.next = NULL;
     return node;
