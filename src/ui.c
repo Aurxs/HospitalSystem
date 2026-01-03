@@ -46,6 +46,10 @@
 #include <stdlib.h>     /* 标准库函数 */
 #include <locale.h>     /* 本地化设置（支持中文显示） */
 #include <ctype.h>      /* 字符处理函数 */
+#include <unistd.h>     /* POSIX标准函数 (readlink) */
+#include <libgen.h>     /* dirname函数 */
+#include <sys/stat.h>   /* mkdir函数 */
+#include <errno.h>      /* errno */
 
 /*
  * ============================================================================
@@ -65,13 +69,77 @@ AuthNode      *g_users = NULL;          /* 用户账户链表头 */
 /* 当前登录用户信息 */
 AuthNode      *g_current_user = NULL;   /* 当前登录的用户节点 */
 
-/* 数据文件路径 - 相对于程序运行目录 */
-static const char *DATA_PATH_PATIENTS = "data/patients.txt";
-static const char *DATA_PATH_DOCTORS = "data/doctors.txt";
-static const char *DATA_PATH_DRUGS = "data/drugs.txt";
-static const char *DATA_PATH_REGISTRATIONS = "data/registrations.txt";
-static const char *DATA_PATH_BILLS = "data/bills.txt";
-static const char *DATA_PATH_USERS = "data/auth.txt";
+/* 数据文件路径 - 相对于程序可执行文件位置 */
+static char g_data_dir[1024] = "";           /* data目录的完整路径 */
+static char DATA_PATH_PATIENTS[1024] = "";   /* 患者数据文件路径 */
+static char DATA_PATH_DOCTORS[1024] = "";    /* 医生数据文件路径 */
+static char DATA_PATH_DRUGS[1024] = "";      /* 药品数据文件路径 */
+static char DATA_PATH_REGISTRATIONS[1024] = ""; /* 挂号数据文件路径 */
+static char DATA_PATH_BILLS[1024] = "";      /* 费用数据文件路径 */
+static char DATA_PATH_USERS[1024] = "";      /* 用户数据文件路径 */
+
+/*
+ * ============================================================================
+ * 初始化数据目录路径
+ * 功能: 获取程序可执行文件所在目录，并设置data文件夹的相对路径
+ *       如果data文件夹不存在，则创建它
+ * ============================================================================
+ */
+static void init_data_paths(void) {
+    char exe_path[1024] = "";
+    char exe_dir[1024] = "";
+    
+    /* 获取当前可执行文件的路径 */
+    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+    if (len != -1) {
+        exe_path[len] = '\0';
+        /* 获取目录部分 */
+        char *dir = dirname(exe_path);
+        strncpy(exe_dir, dir, sizeof(exe_dir) - 1);
+    } else {
+        /* 如果获取失败，使用当前工作目录 */
+        getcwd(exe_dir, sizeof(exe_dir));
+    }
+    
+    /* 构建data目录路径 */
+    snprintf(g_data_dir, sizeof(g_data_dir), "%s/data", exe_dir);
+    
+    /* 检查并创建data目录 */
+    struct stat st = {0};
+    if (stat(g_data_dir, &st) == -1) {
+        /* 目录不存在，创建它 */
+        if (mkdir(g_data_dir, 0755) == -1 && errno != EEXIST) {
+            /* 创建失败，回退到当前目录 */
+            strncpy(g_data_dir, "data", sizeof(g_data_dir));
+            mkdir(g_data_dir, 0755);
+        }
+    }
+    
+    /* 构建各数据文件的完整路径 */
+    snprintf(DATA_PATH_PATIENTS, sizeof(DATA_PATH_PATIENTS), "%s/patients.txt", g_data_dir);
+    snprintf(DATA_PATH_DOCTORS, sizeof(DATA_PATH_DOCTORS), "%s/doctors.txt", g_data_dir);
+    snprintf(DATA_PATH_DRUGS, sizeof(DATA_PATH_DRUGS), "%s/drugs.txt", g_data_dir);
+    snprintf(DATA_PATH_REGISTRATIONS, sizeof(DATA_PATH_REGISTRATIONS), "%s/registrations.txt", g_data_dir);
+    snprintf(DATA_PATH_BILLS, sizeof(DATA_PATH_BILLS), "%s/bills.txt", g_data_dir);
+    snprintf(DATA_PATH_USERS, sizeof(DATA_PATH_USERS), "%s/auth.txt", g_data_dir);
+}
+
+/*
+ * ============================================================================
+ * 创建空数据文件
+ * 功能: 如果数据文件不存在，创建空文件
+ * ============================================================================
+ */
+static void create_empty_file_if_not_exists(const char *filepath) {
+    struct stat st;
+    if (stat(filepath, &st) == -1) {
+        /* 文件不存在，创建空文件 */
+        FILE *fp = fopen(filepath, "w");
+        if (fp != NULL) {
+            fclose(fp);
+        }
+    }
+}
 
 /*
  * ============================================================================
@@ -244,6 +312,17 @@ int ui_init(void) {
     /* 设置本地化，支持中文显示 */
     setlocale(LC_ALL, "");
     
+    /* 初始化数据目录路径（相对于程序可执行文件位置） */
+    init_data_paths();
+    
+    /* 确保所有数据文件存在 */
+    create_empty_file_if_not_exists(DATA_PATH_PATIENTS);
+    create_empty_file_if_not_exists(DATA_PATH_DOCTORS);
+    create_empty_file_if_not_exists(DATA_PATH_DRUGS);
+    create_empty_file_if_not_exists(DATA_PATH_REGISTRATIONS);
+    create_empty_file_if_not_exists(DATA_PATH_BILLS);
+    /* auth.txt 不在这里创建，由后面的逻辑处理 */
+    
     /* 初始化ncurses屏幕 */
     initscr();
     
@@ -292,9 +371,9 @@ int ui_init(void) {
     g_bills = load_bills(DATA_PATH_BILLS);
     g_users = load_users(DATA_PATH_USERS);
     
-    /* 如果没有任何用户，创建默认管理员账户 */
+    /* 如果没有任何用户，创建默认管理员账户（用户名和密码都是admin） */
     if (g_users == NULL) {
-        AuthNode admin = make_user("admin", "admin123", ROLE_ADMIN);
+        AuthNode admin = make_user("admin", "admin", ROLE_ADMIN);
         add_user(&g_users, admin);
         save_users(DATA_PATH_USERS, g_users);
     }
