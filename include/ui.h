@@ -78,15 +78,15 @@
  */
 
 /* 数据链表头指针 - 指向各类数据的链表头 */
-extern PatientNode   *g_patients;       /* 患者数据链表头 */
-extern DoctorNode    *g_doctors;        /* 医生数据链表头 */
-extern DrugNode      *g_drugs;          /* 药品数据链表头 */
-extern RegisterNode  *g_registrations;  /* 挂号记录链表头 */
-extern BillNode      *g_bills;          /* 费用记录链表头 */
-extern AuthNode      *g_users;          /* 用户账户链表头 */
+extern PatientNode *g_patients; /* 患者数据链表头 */
+extern DoctorNode *g_doctors; /* 医生数据链表头 */
+extern DrugNode *g_drugs; /* 药品数据链表头 */
+extern RegisterNode *g_registrations; /* 挂号记录链表头 */
+extern BillNode *g_bills; /* 费用记录链表头 */
+extern AuthNode *g_users; /* 用户账户链表头 */
 
 /* 当前登录用户信息 */
-extern AuthNode      *g_current_user;   /* 当前登录的用户节点 */
+extern AuthNode *g_current_user; /* 当前登录的用户节点 */
 
 /*
  * ============================================================================
