@@ -2560,7 +2560,7 @@ void ui_search_registration(WINDOW *parent_win) {
             mvwprintw(w, 2, 14, "[%-25s]", ""); wrefresh(w);
             if (ui_input_string(w, 2, 15, kw, 25, 0) >= 0) {
                 RegisterNode *r = findRegistration_patient(g_registrations, kw);
-                if (r) { char msg[200]; snprintf(msg, sizeof(msg), "找到: %s -> %s, %s, %s", r->patientName, r->doctorName, r->department, r->date); ui_show_message("结果", msg, 1); }
+                if (r) { char msg[256]; snprintf(msg, sizeof(msg), "找到: %.20s -> %.20s, %.15s", r->patientName, r->doctorName, r->department); ui_show_message("结果", msg, 1); }
                 else ui_show_message("结果", "未找到", 3);
             }
         } else if (ch == 27) { delwin(w); return; }
