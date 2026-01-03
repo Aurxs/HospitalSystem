@@ -369,6 +369,23 @@ void ui_draw_box(WINDOW *win, const char *title) {
 
 /*
  * ============================================================================
+ * 关闭弹出窗口并刷新屏幕
+ * 功能: 正确关闭弹出窗口，避免屏幕残留
+ * ============================================================================
+ */
+static void close_popup_window(WINDOW *popup) {
+    if (popup != NULL) {
+        werase(popup);
+        wrefresh(popup);
+        delwin(popup);
+    }
+    /* 刷新整个屏幕以重绘背景 */
+    touchwin(stdscr);
+    refresh();
+}
+
+/*
+ * ============================================================================
  * 显示消息框
  * 功能: 在屏幕中央弹出消息框，等待用户按键确认
  * 参数:
@@ -420,12 +437,8 @@ void ui_show_message(const char *title, const char *message, int type) {
     /* 等待用户按键 */
     wgetch(msg_win);
     
-    /* 销毁窗口 */
-    delwin(msg_win);
-    
-    /* 刷新主屏幕 */
-    touchwin(stdscr);
-    refresh();
+    /* 正确关闭弹出窗口并刷新屏幕 */
+    close_popup_window(msg_win);
 }
 
 /*
@@ -511,12 +524,10 @@ int ui_confirm_dialog(const char *title, const char *message) {
             case KEY_ENTER:
                 delwin(dialog_win);
                 touchwin(stdscr);
-                refresh();
+                close_popup_window(dialog_win);
                 return (selected == 0) ? 1 : 0;
             case 27:  /* ESC键 */
-                delwin(dialog_win);
-                touchwin(stdscr);
-                refresh();
+                close_popup_window(dialog_win);
                 return 0;
         }
     }
@@ -2918,6 +2929,10 @@ void ui_main_screen(int role) {
     int menu_count = (role == ROLE_ADMIN) ? 8 : 7;
     
     while (running) {
+        /* 刷新所有窗口 - 解决子窗口关闭后的渲染问题 */
+        touchwin(stdscr);
+        refresh();
+        
         ui_draw_header(header_win);
         ui_draw_sidebar(sidebar_win, role, selected);
         ui_draw_status_bar(status_win, NULL);
@@ -2927,6 +2942,15 @@ void ui_main_screen(int role) {
         mvwprintw(content_win, 3, 3, "请从左侧菜单选择功能");
         mvwprintw(content_win, 5, 3, "使用 ↑↓ 键选择菜单项");
         mvwprintw(content_win, 6, 3, "按 Enter 进入选中的功能");
+        
+        /* 根据角色显示权限提示 */
+        if (role == ROLE_PATIENT) {
+            mvwprintw(content_win, 8, 3, "您的角色: 患者 (只能查看挂号和费用信息)");
+        } else if (role == ROLE_DOCTOR) {
+            mvwprintw(content_win, 8, 3, "您的角色: 医生 (可管理患者和挂号信息)");
+        } else {
+            mvwprintw(content_win, 8, 3, "您的角色: 管理员 (拥有所有权限)");
+        }
         wrefresh(content_win);
         
         ch = wgetch(sidebar_win);
@@ -2935,18 +2959,47 @@ void ui_main_screen(int role) {
             case KEY_UP: case 'k': if (selected > 0) selected--; break;
             case KEY_DOWN: case 'j': if (selected < menu_count - 1) selected++; break;
             case '\n': case KEY_ENTER:
-                if (role != ROLE_ADMIN && selected >= MENU_USER_MGMT) selected++;
-                switch(selected) {
-                    case MENU_PATIENT_MGMT: ui_patient_management(content_win); break;
-                    case MENU_DOCTOR_MGMT: ui_doctor_management(content_win); break;
-                    case MENU_DRUG_MGMT: ui_drug_management(content_win); break;
-                    case MENU_REGISTER_MGMT: ui_registration_management(content_win); break;
-                    case MENU_BILL_MGMT: ui_bill_management(content_win); break;
-                    case MENU_USER_MGMT: if (role == ROLE_ADMIN) ui_user_management(content_win); break;
-                    case MENU_LOGOUT: running = 0; break;
-                    case MENU_EXIT: delwin(header_win); delwin(sidebar_win); delwin(content_win); delwin(status_win); return;
+                {
+                    /* 计算实际菜单项索引（跳过非管理员隐藏的用户管理） */
+                    int actual_menu = selected;
+                    if (role != ROLE_ADMIN && selected >= MENU_USER_MGMT) actual_menu++;
+                    
+                    /* 权限检查 */
+                    int allowed = 1;
+                    if (role == ROLE_PATIENT) {
+                        /* 患者只能访问挂号管理和费用管理（只读） */
+                        if (actual_menu == MENU_PATIENT_MGMT || 
+                            actual_menu == MENU_DOCTOR_MGMT || 
+                            actual_menu == MENU_DRUG_MGMT ||
+                            actual_menu == MENU_USER_MGMT) {
+                            ui_show_message("权限不足", "患者账户无法访问此功能", 2);
+                            allowed = 0;
+                        }
+                    } else if (role == ROLE_DOCTOR) {
+                        /* 医生不能访问药品管理和用户管理 */
+                        if (actual_menu == MENU_DRUG_MGMT || actual_menu == MENU_USER_MGMT) {
+                            ui_show_message("权限不足", "医生账户无法访问此功能", 2);
+                            allowed = 0;
+                        }
+                    }
+                    
+                    if (allowed) {
+                        switch(actual_menu) {
+                            case MENU_PATIENT_MGMT: ui_patient_management(content_win); break;
+                            case MENU_DOCTOR_MGMT: ui_doctor_management(content_win); break;
+                            case MENU_DRUG_MGMT: ui_drug_management(content_win); break;
+                            case MENU_REGISTER_MGMT: ui_registration_management(content_win); break;
+                            case MENU_BILL_MGMT: ui_bill_management(content_win); break;
+                            case MENU_USER_MGMT: if (role == ROLE_ADMIN) ui_user_management(content_win); break;
+                            case MENU_LOGOUT: running = 0; break;
+                            case MENU_EXIT: delwin(header_win); delwin(sidebar_win); delwin(content_win); delwin(status_win); return;
+                        }
+                    }
+                    
+                    /* 重新刷新所有窗口 */
+                    touchwin(stdscr);
+                    refresh();
                 }
-                if (role != ROLE_ADMIN && selected > MENU_USER_MGMT) selected--;
                 break;
             case 'q': case 'Q': running = 0; break;
         }
