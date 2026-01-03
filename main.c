@@ -1,13 +1,24 @@
+/**
+ * ============================================================================
+ * 医院管理系统 - 主程序入口
+ * 作者: 罗金源
+ * 描述: 本程序是一个基于ncurses的医院管理系统
+ *       支持患者、医生、药品、挂号、费用和用户管理
+ * ============================================================================
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "datastruct.h"
 #include "file_io.h"
+#include "ui.h"
 
+/**
+ * 主函数 - 程序入口
+ * 调用ui_main()启动图形界面
+ */
 int main() {
-    PatientNode *patient = load_patients("patients.txt");
-    DoctorNode *doctor = load_doctors("doctors.txt");
-    DrugNode *drug = load_drugs("drugs.txt");
-    RegisterNode *registration = load_registrations("registrations.txt");
-    BillNode *bill = load_bills("bills.txt");
+    /* 启动用户界面 */
+    return ui_main();
 }
