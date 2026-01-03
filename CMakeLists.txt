@@ -7,18 +7,27 @@ set(CMAKE_C_STANDARD 99)
 # --- 1. 跨平台查找 Curses/ncurses 库 ---
 if(WIN32)
     # 在 Windows 上，建议通过 vcpkg 安装 pdcurses: vcpkg install pdcurses
-    # 这里尝试寻找 PDCurses
-    find_package(PDCurses QUIET)
-    if(PDCurses_FOUND)
-        set(CURSES_LIBRARIES PDCurses::PDCurses)
-    else()
-        find_package(pdcurses QUIET)
-        if (pdcurses_FOUND)
-            set(CURSES_LIBRARIES pdcurses::pdcurses)
+
+    # 1. 优先尝试通过 CONFIG 模式查找 pdcurses (vcpkg 默认方式)
+    find_package(pdcurses CONFIG QUIET)
+
+    if (pdcurses_FOUND)
+        set(CURSES_LIBRARIES pdcurses::pdcurses)
+    else ()
+        # 2. 尝试查找 PDCurses (可能是其他方式安装)
+        find_package(PDCurses QUIET)
+
+        if (PDCurses_FOUND)
+            set(CURSES_LIBRARIES PDCurses::PDCurses)
         else ()
-            # 如果没找到特定的包，退而求其次使用标准的 Curses 查找
-            find_package(Curses REQUIRED)
-            include_directories(${CURSES_INCLUDE_DIRS})
+            # 3. 最后尝试标准的 Curses 查找
+            find_package(Curses QUIET)
+
+            if (CURSES_FOUND)
+                include_directories(${CURSES_INCLUDE_DIRS})
+            else ()
+                message(FATAL_ERROR "Could not find Curses library. On Windows, please install pdcurses via vcpkg:\n  vcpkg install pdcurses\nOr ensure Curses is installed and configured.")
+            endif ()
         endif ()
     endif()
 else()

@@ -41,7 +41,11 @@
 #include "../include/auth.h"         /* 用户认证函数 */
 #include "../include/file_io.h"      /* 文件读写函数 */
 
+#if defined(_WIN32) || defined(WIN32)
+#include <curses.h>     /* Windows PDCurses */
+#else
 #include <ncurses.h>    /* ncurses库 - 终端图形界面 */
+#endif
 #include <string.h>     /* 字符串处理函数 */
 #include <stdlib.h>     /* 标准库函数 */
 #include <locale.h>     /* 本地化设置（支持中文显示） */
