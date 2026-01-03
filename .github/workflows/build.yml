@@ -2,9 +2,9 @@ name: Build Hospital System
 
 on:
   push:
-    branches: [ "tui", "main", "master" ]
+    branches: [ "main", "master", "tui" ]
   pull_request:
-    branches: [ "tui", "main", "master" ]
+    branches: [ "main", "master", "tui" ]
 
 jobs:
   build:
@@ -18,63 +18,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Linux Dependencies
+      # --- Linux Dependencies ---
       - name: Install Dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libncurses5-dev cmake build-essential
+          sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake build-essential
 
-      # macOS Dependencies
+      # --- macOS Dependencies ---
       - name: Install Dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install cmake
-          # macOS usually comes with ncurses, but we can install it via brew if needed
-          # brew install ncurses
+          # macOS usually has ncurses, but we can ensure it
+          brew install ncurses
 
-      # Windows: setup vcpkg and install pdcurses (x64)
-      - name: Setup vcpkg and install pdcurses
+      # --- Windows Dependencies (vcpkg) ---
+      - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
-        uses: microsoft/vcpkg-action@v1
-        with:
-          vcpkgArguments: install pdcurses:x64-windows
-          vcpkgDirectory: vcpkg
-
-      # Windows debug: show vcpkg files and toolchain
-      - name: Show vcpkg debug info
-        if: runner.os == 'Windows'
-        shell: pwsh
+        shell: cmd
         run: |
-          Write-Host "Listing vcpkg root:";
-          if (Test-Path -Path "${{ github.workspace }}\vcpkg") {
-            Get-ChildItem -Path "${{ github.workspace }}\vcpkg" -Recurse -Depth 2 | Select-Object -First 100
-          } else {
-            Write-Host "vcpkg directory not found at ${{ github.workspace }}\vcpkg"
-          }
-          $toolchain = "${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
-          Write-Host "Checking toolchain file: $toolchain"
-          if (Test-Path -Path $toolchain) { Write-Host "Toolchain file exists" } else { Write-Host "Toolchain file MISSING" }
-          # list installed triplet directories if present
-          $inst = "${{ github.workspace }}\vcpkg\installed\x64-windows"
-          if (Test-Path -Path $inst) { Get-ChildItem -Path $inst -Recurse -Depth 2 | Select-Object -First 200 } else { Write-Host "No installed x64-windows folder found: $inst" }
+          vcpkg install pdcurses:x64-windows
 
-      # Configure CMake
+      # --- Configure CMake ---
       - name: Configure CMake
         shell: bash
         run: |
+          CMAKE_ARGS=""
           if [ "$RUNNER_OS" == "Windows" ]; then
-            # Use the vcpkg toolchain file produced by the action (relative path inside workspace)
-            cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_ROOT="${{ github.workspace }}/vcpkg" -DVCPKG_TARGET_TRIPLET="x64-windows"
-          else
-            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+            # Point to the vcpkg toolchain file. 
+            # GitHub Actions Windows runners have vcpkg at $VCPKG_INSTALLATION_ROOT or C:/vcpkg
+            # We use the environment variable provided by the runner.
+            CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows"
           fi
+          
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release $CMAKE_ARGS
 
-      # Build
+      # --- Build ---
       - name: Build
         run: cmake --build build --config Release
 
-      # Upload Artifacts
+      # --- Upload Artifacts ---
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -83,4 +67,7 @@ jobs:
             build/HospitalSystem
             build/HospitalSystem.exe
             build/Release/HospitalSystem.exe
+            build/RunTest
+            build/RunTest.exe
+            build/Release/RunTest.exe
           if-no-files-found: ignore
