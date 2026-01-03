@@ -210,6 +210,32 @@ void test_delete_bill() {
     printf("✓ delete_bill 测试通过\n\n");
 }
 
+void test_sort_bills_by_amount() {
+    printf("测试 sort_bills_by_amount 函数...\n");
+    test_count_bill++;
+
+    BillNode *head = NULL;
+    BillNode b1 = make_bill("A", "I", 300.0);
+    BillNode b2 = make_bill("B", "I", 100.0);
+    BillNode b3 = make_bill("C", "I", 200.0);
+
+    add_bill(&head, b1);
+    add_bill(&head, b2);
+    add_bill(&head, b3);
+
+    head = sort_bills_by_amount(head);
+
+    assert(head->amount == 100.0);
+    assert(head->next->amount == 200.0);
+    assert(head->next->next->amount == 300.0);
+
+    // 清理内存
+    free_bill_list(head);
+
+    pass_count_bill++;
+    printf("✓ sort_bills_by_amount 测试通过\n\n");
+}
+
 void run_bill_tests() {
     printf("========== 费用管理模块测试 ==========\n\n");
 
@@ -220,6 +246,7 @@ void run_bill_tests() {
     test_calculate_total_bill();
     test_modify_bill();
     test_delete_bill();
+    test_sort_bills_by_amount();
 
     printf("========================================\n");
     printf("费用模块测试完成: %d/%d 通过\n", pass_count_bill, test_count_bill);

@@ -116,3 +116,150 @@ DoctorNode *delete_doctor(DoctorNode *head, const char *phone) {
     }
     return head; // 没有找到，返回原头指针
 }
+
+//按姓名字典序排序医生链表（使用归并排序）
+DoctorNode *sort_doctors_by_name(DoctorNode *head) {
+    // 基本情况：空链表或单节点链表
+    if (head == NULL || head->next == NULL) {
+        return head;
+    }
+
+    // 使用快慢指针找到中点
+    DoctorNode *slow = head;
+    DoctorNode *fast = head->next;
+    while (fast != NULL && fast->next != NULL) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    // 分割链表为两半
+    DoctorNode *mid = slow->next;
+    slow->next = NULL;
+
+    // 递归排序两半
+    DoctorNode *left = sort_doctors_by_name(head);
+    DoctorNode *right = sort_doctors_by_name(mid);
+
+    // 合并排序后的两半
+    DoctorNode dummy;
+    DoctorNode *tail = &dummy;
+    dummy.next = NULL;
+
+    while (left != NULL && right != NULL) {
+        if (strcmp(left->name, right->name) <= 0) {
+            tail->next = left;
+            left = left->next;
+        } else {
+            tail->next = right;
+            right = right->next;
+        }
+        tail = tail->next;
+    }
+
+    // 连接剩余节点
+    if (left != NULL) {
+        tail->next = left;
+    } else {
+        tail->next = right;
+    }
+
+    return dummy.next; // 返回排序后的头指针
+}
+
+//按电话号码字典序排序医生链表（使用归并排序）
+DoctorNode *sort_doctors_by_phone(DoctorNode *head) {
+    // 基本情况：空链表或单节点链表
+    if (head == NULL || head->next == NULL) {
+        return head;
+    }
+
+    // 使用快慢指针找到中点
+    DoctorNode *slow = head;
+    DoctorNode *fast = head->next;
+    while (fast != NULL && fast->next != NULL) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    // 分割链表为两半
+    DoctorNode *mid = slow->next;
+    slow->next = NULL;
+
+    // 递归排序两半
+    DoctorNode *left = sort_doctors_by_phone(head);
+    DoctorNode *right = sort_doctors_by_phone(mid);
+
+    // 合并排序后的两半
+    DoctorNode dummy;
+    DoctorNode *tail = &dummy;
+    dummy.next = NULL;
+
+    while (left != NULL && right != NULL) {
+        if (strcmp(left->phone, right->phone) <= 0) {
+            tail->next = left;
+            left = left->next;
+        } else {
+            tail->next = right;
+            right = right->next;
+        }
+        tail = tail->next;
+    }
+
+    // 连接剩余节点
+    if (left != NULL) {
+        tail->next = left;
+    } else {
+        tail->next = right;
+    }
+
+    return dummy.next; // 返回排序后的头指针
+}
+
+//按年龄升序排序医生链表（使用归并排序）
+DoctorNode *sort_doctors_by_age(DoctorNode *head) {
+    // 基本情况：空链表或单节点链表
+    if (head == NULL || head->next == NULL) {
+        return head;
+    }
+
+    // 使用快慢指针找到中点
+    DoctorNode *slow = head;
+    DoctorNode *fast = head->next;
+    while (fast != NULL && fast->next != NULL) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    // 分割链表为两半
+    DoctorNode *mid = slow->next;
+    slow->next = NULL;
+
+    // 递归排序两半
+    DoctorNode *left = sort_doctors_by_age(head);
+    DoctorNode *right = sort_doctors_by_age(mid);
+
+    // 合并排序后的两半
+    DoctorNode dummy;
+    DoctorNode *tail = &dummy;
+    dummy.next = NULL;
+
+    while (left != NULL && right != NULL) {
+        if (left->age <= right->age) {
+            tail->next = left;
+            left = left->next;
+        } else {
+            tail->next = right;
+            right = right->next;
+        }
+        tail = tail->next;
+    }
+
+    // 连接剩余节点
+    if (left != NULL) {
+        tail->next = left;
+    } else {
+        tail->next = right;
+    }
+
+    return dummy.next; // 返回排序后的头指针
+}

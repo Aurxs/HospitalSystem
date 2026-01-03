@@ -199,6 +199,96 @@ void test_delete_doctor() {
     printf("✓ delete_doctor 测试通过\n\n");
 }
 
+void test_sort_doctors_by_name() {
+    printf("测试 sort_doctors_by_name 函数...\n");
+    test_count_doctor++;
+
+    DoctorNode *head = NULL;
+    DoctorNode d1 = make_doctor("C", 30, "M", "D", "139");
+    DoctorNode d2 = make_doctor("A", 31, "M", "D", "138");
+    DoctorNode d3 = make_doctor("B", 32, "M", "D", "137");
+
+    add_doctor(&head, d1);
+    add_doctor(&head, d2);
+    add_doctor(&head, d3);
+
+    head = sort_doctors_by_name(head);
+
+    assert(strcmp(head->name, "A") == 0);
+    assert(strcmp(head->next->name, "B") == 0);
+    assert(strcmp(head->next->next->name, "C") == 0);
+
+    // 清理内存
+    while (head != NULL) {
+        DoctorNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_doctor++;
+    printf("✓ sort_doctors_by_name 测试通过\n\n");
+}
+
+void test_sort_doctors_by_phone() {
+    printf("测试 sort_doctors_by_phone 函数...\n");
+    test_count_doctor++;
+
+    DoctorNode *head = NULL;
+    DoctorNode d1 = make_doctor("A", 30, "M", "D", "139");
+    DoctorNode d2 = make_doctor("B", 31, "M", "D", "137");
+    DoctorNode d3 = make_doctor("C", 32, "M", "D", "138");
+
+    add_doctor(&head, d1);
+    add_doctor(&head, d2);
+    add_doctor(&head, d3);
+
+    head = sort_doctors_by_phone(head);
+
+    assert(strcmp(head->phone, "137") == 0);
+    assert(strcmp(head->next->phone, "138") == 0);
+    assert(strcmp(head->next->next->phone, "139") == 0);
+
+    // 清理内存
+    while (head != NULL) {
+        DoctorNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_doctor++;
+    printf("✓ sort_doctors_by_phone 测试通过\n\n");
+}
+
+void test_sort_doctors_by_age() {
+    printf("测试 sort_doctors_by_age 函数...\n");
+    test_count_doctor++;
+
+    DoctorNode *head = NULL;
+    DoctorNode d1 = make_doctor("A", 32, "M", "D", "139");
+    DoctorNode d2 = make_doctor("B", 30, "M", "D", "138");
+    DoctorNode d3 = make_doctor("C", 31, "M", "D", "137");
+
+    add_doctor(&head, d1);
+    add_doctor(&head, d2);
+    add_doctor(&head, d3);
+
+    head = sort_doctors_by_age(head);
+
+    assert(head->age == 30);
+    assert(head->next->age == 31);
+    assert(head->next->next->age == 32);
+
+    // 清理内存
+    while (head != NULL) {
+        DoctorNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_doctor++;
+    printf("✓ sort_doctors_by_age 测试通过\n\n");
+}
+
 void run_doctor_tests() {
     printf("========== 医生管理模块测试 ==========\n\n");
 
@@ -208,6 +298,9 @@ void run_doctor_tests() {
     test_findDoctor_phone();
     test_modify_doctor();
     test_delete_doctor();
+    test_sort_doctors_by_name();
+    test_sort_doctors_by_phone();
+    test_sort_doctors_by_age();
 
     printf("========================================\n");
     printf("医生模块测试完成: %d/%d 通过\n", pass_count_doctor, test_count_doctor);

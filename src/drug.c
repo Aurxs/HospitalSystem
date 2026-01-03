@@ -104,3 +104,101 @@ DrugNode *delete_drug(DrugNode *head, const char *name) {
     }
     return head; // 没有找到，返回原头指针
 }
+
+//按价格升序排序药品链表（使用归并排序）
+DrugNode *sort_drugs_by_price(DrugNode *head) {
+    // 基本情况：空链表或单节点链表
+    if (head == NULL || head->next == NULL) {
+        return head;
+    }
+
+    // 使用快慢指针找到中点
+    DrugNode *slow = head;
+    DrugNode *fast = head->next;
+    while (fast != NULL && fast->next != NULL) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    // 分割链表为两半
+    DrugNode *mid = slow->next;
+    slow->next = NULL;
+
+    // 递归排序两半
+    DrugNode *left = sort_drugs_by_price(head);
+    DrugNode *right = sort_drugs_by_price(mid);
+
+    // 合并排序后的两半
+    DrugNode dummy;
+    DrugNode *tail = &dummy;
+    dummy.next = NULL;
+
+    while (left != NULL && right != NULL) {
+        if (left->price <= right->price) {
+            tail->next = left;
+            left = left->next;
+        } else {
+            tail->next = right;
+            right = right->next;
+        }
+        tail = tail->next;
+    }
+
+    // 连接剩余节点
+    if (left != NULL) {
+        tail->next = left;
+    } else {
+        tail->next = right;
+    }
+
+    return dummy.next; // 返回排序后的头指针
+}
+
+//按库存数量升序排序药品链表（使用归并排序）
+DrugNode *sort_drugs_by_stock(DrugNode *head) {
+    // 基本情况：空链表或单节点链表
+    if (head == NULL || head->next == NULL) {
+        return head;
+    }
+
+    // 使用快慢指针找到中点
+    DrugNode *slow = head;
+    DrugNode *fast = head->next;
+    while (fast != NULL && fast->next != NULL) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    // 分割链表为两半
+    DrugNode *mid = slow->next;
+    slow->next = NULL;
+
+    // 递归排序两半
+    DrugNode *left = sort_drugs_by_stock(head);
+    DrugNode *right = sort_drugs_by_stock(mid);
+
+    // 合并排序后的两半
+    DrugNode dummy;
+    DrugNode *tail = &dummy;
+    dummy.next = NULL;
+
+    while (left != NULL && right != NULL) {
+        if (left->stock <= right->stock) {
+            tail->next = left;
+            left = left->next;
+        } else {
+            tail->next = right;
+            right = right->next;
+        }
+        tail = tail->next;
+    }
+
+    // 连接剩余节点
+    if (left != NULL) {
+        tail->next = left;
+    } else {
+        tail->next = right;
+    }
+
+    return dummy.next; // 返回排序后的头指针
+}

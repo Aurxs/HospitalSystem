@@ -161,6 +161,66 @@ void test_delete_drug() {
     printf("✓ delete_drug 测试通过\n\n");
 }
 
+void test_sort_drugs_by_price() {
+    printf("测试 sort_drugs_by_price 函数...\n");
+    test_count_drug++;
+
+    DrugNode *head = NULL;
+    DrugNode d1 = make_drug("A", "S", "F", 30.0, 10);
+    DrugNode d2 = make_drug("B", "S", "F", 10.0, 10);
+    DrugNode d3 = make_drug("C", "S", "F", 20.0, 10);
+
+    add_drug(&head, d1);
+    add_drug(&head, d2);
+    add_drug(&head, d3);
+
+    head = sort_drugs_by_price(head);
+
+    assert(head->price == 10.0);
+    assert(head->next->price == 20.0);
+    assert(head->next->next->price == 30.0);
+
+    // 清理内存
+    while (head != NULL) {
+        DrugNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_drug++;
+    printf("✓ sort_drugs_by_price 测试通过\n\n");
+}
+
+void test_sort_drugs_by_stock() {
+    printf("测试 sort_drugs_by_stock 函数...\n");
+    test_count_drug++;
+
+    DrugNode *head = NULL;
+    DrugNode d1 = make_drug("A", "S", "F", 10.0, 30);
+    DrugNode d2 = make_drug("B", "S", "F", 10.0, 10);
+    DrugNode d3 = make_drug("C", "S", "F", 10.0, 20);
+
+    add_drug(&head, d1);
+    add_drug(&head, d2);
+    add_drug(&head, d3);
+
+    head = sort_drugs_by_stock(head);
+
+    assert(head->stock == 10);
+    assert(head->next->stock == 20);
+    assert(head->next->next->stock == 30);
+
+    // 清理内存
+    while (head != NULL) {
+        DrugNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_drug++;
+    printf("✓ sort_drugs_by_stock 测试通过\n\n");
+}
+
 void run_drug_tests() {
     printf("========== 药品管理模块测试 ==========\n\n");
 
@@ -169,6 +229,8 @@ void run_drug_tests() {
     test_findDrug_name();
     test_modify_drug();
     test_delete_drug();
+    test_sort_drugs_by_price();
+    test_sort_drugs_by_stock();
 
     printf("========================================\n");
     printf("药品模块测试完成: %d/%d 通过\n", pass_count_drug, test_count_drug);
