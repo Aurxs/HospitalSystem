@@ -536,7 +536,7 @@ int ui_confirm_dialog(const char *title, const char *message) {
  * ============================================================================
  */
 int ui_input_string(WINDOW *win, int y, int x, char *buffer, int max_len, int hidden) {
-    int pos = 0;           /* 当前输入位置 */
+    int pos = 0;           /* 当前字节位置 */
     int ch;
     
     /* 显示光标 */
@@ -560,10 +560,21 @@ int ui_input_string(WINDOW *win, int y, int x, char *buffer, int max_len, int hi
             curs_set(0);
             return -1;
         } else if (ch == KEY_BACKSPACE || ch == 127 || ch == 8) {
-            /* 退格键删除字符 */
+            /* 退格键删除字符（支持UTF-8多字节字符） */
             if (pos > 0) {
+                /* 
+                 * UTF-8编码规则:
+                 * - 单字节: 0xxxxxxx (ASCII)
+                 * - 多字节: 首字节 11xxxxxx, 后续字节 10xxxxxx
+                 * 删除时需要找到上一个字符的起始位置
+                 */
                 pos--;
+                /* 跳过UTF-8后续字节 (10xxxxxx) */
+                while (pos > 0 && (buffer[pos] & 0xC0) == 0x80) {
+                    pos--;
+                }
                 buffer[pos] = '\0';
+                
                 /* 重新显示输入内容 */
                 wmove(win, y, x);
                 int i;
@@ -572,22 +583,74 @@ int ui_input_string(WINDOW *win, int y, int x, char *buffer, int max_len, int hi
                 }
                 wmove(win, y, x);
                 if (hidden) {
-                    for (i = 0; i < pos; i++) {
+                    /* 密码模式：计算实际字符数显示星号 */
+                    int char_count = 0;
+                    for (i = 0; i < pos; ) {
+                        if ((buffer[i] & 0x80) == 0) i += 1;         /* ASCII */
+                        else if ((buffer[i] & 0xE0) == 0xC0) i += 2; /* 2字节UTF-8 */
+                        else if ((buffer[i] & 0xF0) == 0xE0) i += 3; /* 3字节UTF-8 (中文) */
+                        else if ((buffer[i] & 0xF8) == 0xF0) i += 4; /* 4字节UTF-8 */
+                        else i += 1;
+                        char_count++;
+                    }
+                    for (i = 0; i < char_count; i++) {
                         waddch(win, '*');
                     }
                 } else {
                     wprintw(win, "%s", buffer);
                 }
             }
-        } else if (pos < max_len - 1 && ch >= 32 && ch <= 126) {
-            /* 可打印字符 */
-            buffer[pos] = (char)ch;
-            pos++;
-            buffer[pos] = '\0';
-            if (hidden) {
-                waddch(win, '*');
-            } else {
-                waddch(win, ch);
+        } else if (ch >= 32 && ch <= 126) {
+            /* ASCII可打印字符 */
+            if (pos < max_len - 1) {
+                buffer[pos] = (char)ch;
+                pos++;
+                buffer[pos] = '\0';
+                if (hidden) {
+                    waddch(win, '*');
+                } else {
+                    waddch(win, ch);
+                }
+            }
+        } else if ((ch & 0x80) != 0 && pos < max_len - 4) {
+            /* 
+             * UTF-8多字节字符输入（支持中文）
+             * UTF-8中文字符通常是3个字节: 1110xxxx 10xxxxxx 10xxxxxx
+             * ncurses在某些配置下会将UTF-8字符作为多个字节返回
+             */
+            unsigned char first_byte = (unsigned char)ch;
+            int bytes_needed = 0;
+            
+            /* 根据首字节确定UTF-8字符的字节数 */
+            if ((first_byte & 0xE0) == 0xC0) bytes_needed = 2;      /* 110xxxxx: 2字节 */
+            else if ((first_byte & 0xF0) == 0xE0) bytes_needed = 3; /* 1110xxxx: 3字节 (中文) */
+            else if ((first_byte & 0xF8) == 0xF0) bytes_needed = 4; /* 11110xxx: 4字节 */
+            else bytes_needed = 1;  /* 单字节或无效 */
+            
+            if (pos + bytes_needed < max_len) {
+                buffer[pos++] = (char)ch;
+                
+                /* 读取后续字节 */
+                int i;
+                for (i = 1; i < bytes_needed; i++) {
+                    int next_byte = wgetch(win);
+                    if ((next_byte & 0xC0) == 0x80) {  /* 验证是后续字节 10xxxxxx */
+                        buffer[pos++] = (char)next_byte;
+                    } else {
+                        /* 无效的UTF-8序列，回退 */
+                        ungetch(next_byte);
+                        break;
+                    }
+                }
+                buffer[pos] = '\0';
+                
+                if (hidden) {
+                    waddch(win, '*');
+                } else {
+                    /* 重新显示整个字符串以正确渲染UTF-8 */
+                    wmove(win, y, x);
+                    wprintw(win, "%s", buffer);
+                }
             }
         }
         wrefresh(win);
