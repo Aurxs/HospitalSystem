@@ -1,3 +1,3 @@
-patient|зкчцодч|2
 doctor|неичеь|1
+patient|зкчцодч|2
 admin|кнгцд|0

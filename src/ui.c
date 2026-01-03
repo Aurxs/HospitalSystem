@@ -51,6 +51,23 @@
 #include <sys/stat.h>   /* mkdir函数 */
 #include <errno.h>      /* errno */
 
+#ifdef _WIN32
+    #include <windows.h>
+    #include <direct.h>  /* 用于 _mkdir */
+    #define ACCESS _access
+    #define MKDIR(a) _mkdir((a))
+#else
+    #include <unistd.h>
+    #include <libgen.h>
+    #include <sys/stat.h>
+    #define ACCESS access
+    #define MKDIR(a) mkdir((a), 0755)
+#endif
+
+#ifdef __APPLE__
+    #include <mach-o/dyld.h> /* macOS 专用 */
+#endif
+
 /*
  * ============================================================================
  * 全局变量定义
@@ -80,41 +97,70 @@ static char DATA_PATH_USERS[1024] = "";      /* 用户数据文件路径 */
 
 /*
  * ============================================================================
- * 初始化数据目录路径
+ * 初始化数据目录路径 (跨平台兼容版)
  * 功能: 获取程序可执行文件所在目录，并设置data文件夹的相对路径
- *       如果data文件夹不存在，则创建它
+ * 支持: Windows, macOS, Linux
  * ============================================================================
  */
 static void init_data_paths(void) {
     char exe_path[1024] = "";
     char exe_dir[1024] = "";
-    
-    /* 获取当前可执行文件的路径 */
+
+#ifdef _WIN32
+    /* Windows 平台: 使用 GetModuleFileName */
+    if (GetModuleFileName(NULL, exe_path, sizeof(exe_path)) > 0) {
+        /* Windows 路径使用反斜杠，找到最后一个反斜杠并截断，即为目录 */
+        char *last_slash = strrchr(exe_path, '\\');
+        if (last_slash != NULL) {
+            *last_slash = '\0';
+            strncpy(exe_dir, exe_path, sizeof(exe_dir) - 1);
+        } else {
+            _getcwd(exe_dir, sizeof(exe_dir));
+        }
+    }
+#elif defined(__APPLE__)
+    /* macOS 平台: 使用 _NSGetExecutablePath */
+    uint32_t size = sizeof(exe_path);
+    if (_NSGetExecutablePath(exe_path, &size) == 0) {
+        /* 解析符号链接以获取真实路径 */
+        char real_path[1024];
+        if (realpath(exe_path, real_path) != NULL) {
+            char *dir = dirname(real_path);
+            strncpy(exe_dir, dir, sizeof(exe_dir) - 1);
+        } else {
+            char *dir = dirname(exe_path);
+            strncpy(exe_dir, dir, sizeof(exe_dir) - 1);
+        }
+    } else {
+        getcwd(exe_dir, sizeof(exe_dir));
+    }
+#else
+    /* Linux 平台: 使用 /proc/self/exe */
     ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
     if (len != -1) {
         exe_path[len] = '\0';
-        /* 获取目录部分 */
         char *dir = dirname(exe_path);
         strncpy(exe_dir, dir, sizeof(exe_dir) - 1);
     } else {
-        /* 如果获取失败，使用当前工作目录 */
         getcwd(exe_dir, sizeof(exe_dir));
     }
-    
+#endif
+
     /* 构建data目录路径 */
+    /* 注意: Windows API 通常也能处理正斜杠 '/'，混合使用通常没问题 */
     snprintf(g_data_dir, sizeof(g_data_dir), "%s/data", exe_dir);
-    
+
     /* 检查并创建data目录 */
     struct stat st = {0};
     if (stat(g_data_dir, &st) == -1) {
-        /* 目录不存在，创建它 */
-        if (mkdir(g_data_dir, 0755) == -1 && errno != EEXIST) {
-            /* 创建失败，回退到当前目录 */
+        /* 目录不存在，创建它 (使用前面定义的跨平台宏 MKDIR) */
+        if (MKDIR(g_data_dir) == -1 && errno != EEXIST) {
+            /* 创建失败，回退到当前工作目录 */
             strncpy(g_data_dir, "data", sizeof(g_data_dir));
-            mkdir(g_data_dir, 0755);
+            MKDIR(g_data_dir);
         }
     }
-    
+
     /* 构建各数据文件的完整路径 */
     snprintf(DATA_PATH_PATIENTS, sizeof(DATA_PATH_PATIENTS), "%s/patients.txt", g_data_dir);
     snprintf(DATA_PATH_DOCTORS, sizeof(DATA_PATH_DOCTORS), "%s/doctors.txt", g_data_dir);
@@ -123,6 +169,7 @@ static void init_data_paths(void) {
     snprintf(DATA_PATH_BILLS, sizeof(DATA_PATH_BILLS), "%s/bills.txt", g_data_dir);
     snprintf(DATA_PATH_USERS, sizeof(DATA_PATH_USERS), "%s/auth.txt", g_data_dir);
 }
+
 
 /*
  * ============================================================================
