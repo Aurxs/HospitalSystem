@@ -55,6 +55,26 @@ DoctorNode *modify_doctor(DoctorNode *head, const char *phone, DoctorNode newInf
  */
 DoctorNode *delete_doctor(DoctorNode *head, const char *phone);
 
+/**
+ * 功能：排序医生链表（按姓名字典序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+DoctorNode *sort_doctors_by_name(DoctorNode *head);
+
+/**
+ * 功能：排序医生链表（按电话号码字典序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+DoctorNode *sort_doctors_by_phone(DoctorNode *head);
+
+/**
+ * 功能：排序医生链表（按年龄升序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+DoctorNode *sort_doctors_by_age(DoctorNode *head);
 
 
 #endif //DOCTOR_H

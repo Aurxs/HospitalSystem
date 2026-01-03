@@ -56,5 +56,26 @@ PatientNode *modify_patient(PatientNode *head, const char *phone, PatientNode ne
  */
 PatientNode *delete_patient(PatientNode *head, const char *phone);
 
+/**
+ * 功能：排序患者链表（按姓名字典序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+PatientNode *sort_patients_by_name(PatientNode *head);
+
+/**
+ * 功能：排序患者链表（按电话号码字典序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+PatientNode *sort_patients_by_phone(PatientNode *head);
+
+/**
+ * 功能：排序患者链表（按年龄升序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+PatientNode *sort_patients_by_age(PatientNode *head);
+
 
 #endif

@@ -198,6 +198,66 @@ void test_delete_patient() {
     printf("✓ delete_patient 测试通过\n\n");
 }
 
+void test_sort_patients_by_phone() {
+    printf("测试 sort_patients_by_phone 函数...\n");
+    test_count_patient++;
+
+    PatientNode *head = NULL;
+    PatientNode p1 = make_patient("A", 20, "M", "139", "D", "T");
+    PatientNode p2 = make_patient("B", 21, "M", "138", "D", "T");
+    PatientNode p3 = make_patient("C", 22, "M", "137", "D", "T");
+
+    add_patient(&head, p1);
+    add_patient(&head, p2);
+    add_patient(&head, p3);
+
+    head = sort_patients_by_phone(head);
+
+    assert(strcmp(head->phone, "137") == 0);
+    assert(strcmp(head->next->phone, "138") == 0);
+    assert(strcmp(head->next->next->phone, "139") == 0);
+
+    // 清理内存
+    while (head != NULL) {
+        PatientNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_patient++;
+    printf("✓ sort_patients_by_phone 测试通过\n\n");
+}
+
+void test_sort_patients_by_age() {
+    printf("测试 sort_patients_by_age 函数...\n");
+    test_count_patient++;
+
+    PatientNode *head = NULL;
+    PatientNode p1 = make_patient("A", 30, "M", "139", "D", "T");
+    PatientNode p2 = make_patient("B", 20, "M", "138", "D", "T");
+    PatientNode p3 = make_patient("C", 25, "M", "137", "D", "T");
+
+    add_patient(&head, p1);
+    add_patient(&head, p2);
+    add_patient(&head, p3);
+
+    head = sort_patients_by_age(head);
+
+    assert(head->age == 20);
+    assert(head->next->age == 25);
+    assert(head->next->next->age == 30);
+
+    // 清理内存
+    while (head != NULL) {
+        PatientNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_patient++;
+    printf("✓ sort_patients_by_age 测试通过\n\n");
+}
+
 void run_patient_tests() {
     printf("========== 患者管理模块测试 ==========\n\n");
 
@@ -207,6 +267,8 @@ void run_patient_tests() {
     test_findPatient_phone();
     test_modify_patient();
     test_delete_patient();
+    test_sort_patients_by_phone();
+    test_sort_patients_by_age();
 
     printf("========================================\n");
     printf("患者模块测试完成: %d/%d 通过\n", pass_count_patient, test_count_patient);

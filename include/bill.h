@@ -69,4 +69,11 @@ BillNode *delete_bill(BillNode *head, const char *patientName, const char *itemN
  */
 void free_bill_list(BillNode *head);
 
+/**
+ * 功能：排序费用链表（按金额升序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+BillNode *sort_bills_by_amount(BillNode *head);
+
 #endif // BILL_H

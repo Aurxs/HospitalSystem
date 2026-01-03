@@ -128,10 +128,60 @@ BillNode *delete_bill(BillNode *head, const char *patientName, const char *itemN
 
 // 释放费用链表内存
 void free_bill_list(BillNode *head) {
-    BillNode *temp;
-    while (head != NULL) {
-        temp = head;
-        head = head->next;
+    BillNode *current = head;
+    while (current != NULL) {
+        BillNode *temp = current;
+        current = current->next;
         free(temp);
     }
 }
+
+//按金额升序排序费用链表（使用归并排序）
+BillNode *sort_bills_by_amount(BillNode *head) {
+    // 基本情况：空链表或单节点链表
+    if (head == NULL || head->next == NULL) {
+        return head;
+    }
+
+    // 使用快慢指针找到中点
+    BillNode *slow = head;
+    BillNode *fast = head->next;
+    while (fast != NULL && fast->next != NULL) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    // 分割链表为两半
+    BillNode *mid = slow->next;
+    slow->next = NULL;
+
+    // 递归排序两半
+    BillNode *left = sort_bills_by_amount(head);
+    BillNode *right = sort_bills_by_amount(mid);
+
+    // 合并排序后的两半
+    BillNode dummy;
+    BillNode *tail = &dummy;
+    dummy.next = NULL;
+
+    while (left != NULL && right != NULL) {
+        if (left->amount <= right->amount) {
+            tail->next = left;
+            left = left->next;
+        } else {
+            tail->next = right;
+            right = right->next;
+        }
+        tail = tail->next;
+    }
+
+    // 连接剩余节点
+    if (left != NULL) {
+        tail->next = left;
+    } else {
+        tail->next = right;
+    }
+
+    return dummy.next; // 返回排序后的头指针
+}
+

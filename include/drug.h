@@ -46,6 +46,19 @@ DrugNode *modify_drug(DrugNode *head, const char *name, DrugNode newInfo);
  */
 DrugNode *delete_drug(DrugNode *head, const char *name);
 
+/**
+ * 功能：排序药品链表（按价格升序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+DrugNode *sort_drugs_by_price(DrugNode *head);
+
+/**
+ * 功能：排序药品链表（按库存数量升序）
+ * 参数：head - 链表头指针
+ * 返回值：排序后的头指针
+ */
+DrugNode *sort_drugs_by_stock(DrugNode *head);
 
 
 #endif //DRUG_H
