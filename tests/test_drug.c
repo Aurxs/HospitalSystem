@@ -13,7 +13,7 @@ void test_make_drug() {
     test_count_drug++;
 
     DrugNode drug = make_drug("阿莫西林", "0.25g*24s", "白云山制药", 15.5, 100);
-    (void)drug;
+    (void) drug;
 
     assert(strcmp(drug.name, "阿莫西林") == 0);
     assert(strcmp(drug.spec, "0.25g*24s") == 0);

@@ -17,7 +17,7 @@ void test_make_registration() {
     test_count_registration++;
 
     RegisterNode reg = make_registration("张三", "李医生", "内科", "2023-10-01");
-    (void)reg;
+    (void) reg;
 
     assert(strcmp(reg.patientName, "张三") == 0);
     assert(strcmp(reg.doctorName, "李医生") == 0);

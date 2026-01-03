@@ -69,4 +69,5 @@ jobs:
             build/RunTest
             build/RunTest.exe
             build/Release/RunTest.exe
+            build/Release/*.dll
           if-no-files-found: ignore

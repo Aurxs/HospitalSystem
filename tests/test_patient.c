@@ -17,7 +17,7 @@ void test_make_patient() {
     test_count_patient++;
 
     PatientNode patient = make_patient("张三", 30, "男", "13800138000", "感冒", "多休息");
-    (void)patient; // Suppress unused variable warning in Release builds
+    (void) patient; // Suppress unused variable warning in Release builds
 
     assert(strcmp(patient.name, "张三") == 0);
     assert(patient.age == 30);
