@@ -12,9 +12,14 @@ if(WIN32)
     if(PDCurses_FOUND)
         set(CURSES_LIBRARIES PDCurses::PDCurses)
     else()
-        # 如果没找到特定的包，退而求其次使用标准的 Curses 查找
-        find_package(Curses REQUIRED)
-        include_directories(${CURSES_INCLUDE_DIRS})
+        find_package(pdcurses QUIET)
+        if (pdcurses_FOUND)
+            set(CURSES_LIBRARIES pdcurses::pdcurses)
+        else ()
+            # 如果没找到特定的包，退而求其次使用标准的 Curses 查找
+            find_package(Curses REQUIRED)
+            include_directories(${CURSES_INCLUDE_DIRS})
+        endif ()
     endif()
 else()
     # macOS 和 Linux 系统

@@ -1,0 +1,67 @@
+name: Build Hospital System
+
+on:
+  push:
+    branches: [ "tui", "main", "master" ]
+  pull_request:
+    branches: [ "tui", "main", "master" ]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Linux Dependencies
+      - name: Install Dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncurses5-dev cmake build-essential
+
+      # macOS Dependencies
+      - name: Install Dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+          # macOS usually comes with ncurses, but we can install it via brew if needed
+          # brew install ncurses
+
+      # Windows Dependencies (using vcpkg)
+      - name: Install Dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          vcpkg install pdcurses
+          vcpkg integrate install
+
+      # Configure CMake
+      - name: Configure CMake
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          else
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          fi
+
+      # Build
+      - name: Build
+        run: cmake --build build --config Release
+
+      # Upload Artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: HospitalSystem-${{ matrix.os }}
+          path: |
+            build/HospitalSystem
+            build/HospitalSystem.exe
+            build/Release/HospitalSystem.exe
+          if-no-files-found: ignore
