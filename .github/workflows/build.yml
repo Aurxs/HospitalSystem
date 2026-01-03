@@ -40,19 +40,18 @@ jobs:
         run: |
           vcpkg install pdcurses:x64-windows
 
-      # --- Configure CMake ---
-      - name: Configure CMake
-        shell: bash
+      # --- Configure CMake (Windows) ---
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
         run: |
-          CMAKE_ARGS=""
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            # Point to the vcpkg toolchain file. 
-            # GitHub Actions Windows runners have vcpkg at $VCPKG_INSTALLATION_ROOT or C:/vcpkg
-            # We use the environment variable provided by the runner.
-            CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows"
-          fi
-          
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release $CMAKE_ARGS
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      # --- Configure CMake (Non-Windows) ---
+      - name: Configure CMake (Non-Windows)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
       # --- Build ---
       - name: Build
