@@ -50,8 +50,6 @@
 #include <stdlib.h>     /* 标准库函数 */
 #include <locale.h>     /* 本地化设置（支持中文显示） */
 #include <ctype.h>      /* 字符处理函数 */
-#include <unistd.h>     /* POSIX标准函数 (readlink) */
-#include <libgen.h>     /* dirname函数 */
 #include <sys/stat.h>   /* mkdir函数 */
 #include <errno.h>      /* errno */
 

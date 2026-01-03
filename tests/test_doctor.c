@@ -17,6 +17,7 @@ void test_make_doctor() {
     test_count_doctor++;
 
     DoctorNode doctor = make_doctor("李医生", 40, "男", "内科", "13800138001");
+    (void) doctor;
 
     assert(strcmp(doctor.name, "李医生") == 0);
     assert(doctor.age == 40);

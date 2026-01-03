@@ -12,6 +12,7 @@ void test_make_user() {
     test_count_auth++;
 
     AuthNode user = make_user("admin", "123456", 0);
+    (void) user;
     assert(strcmp(user.username, "admin") == 0);
 
     // 使用 cipher 函数验证加密后的密码

@@ -18,6 +18,7 @@ void test_make_bill() {
     test_count_bill++;
 
     BillNode bill = make_bill("张三", "CT检查", 500.0);
+    (void) bill;
 
     assert(strcmp(bill.patientName, "张三") == 0);
     assert(strcmp(bill.itemName, "CT检查") == 0);
