@@ -80,8 +80,8 @@ void test_save_load_doctors() {
 
     // 创建医生链表
     DoctorNode *head = NULL;
-    DoctorNode d1 = make_doctor("王医生", 40, "男", "内科", "13800138001");
-    DoctorNode d2 = make_doctor("张医生", 35, "女", "外科", "13900139001");
+    DoctorNode d1 = make_doctor("王医生", 40, "男", "内科", "13800138001", "");
+    DoctorNode d2 = make_doctor("张医生", 35, "女", "外科", "13900139001", "");
     add_doctor(&head, d1);
     add_doctor(&head, d2);
 

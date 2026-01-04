@@ -108,12 +108,13 @@ int save_doctors(const char *filename, DoctorNode *head) {
 
     DoctorNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%d|%s|%s|%s\n",
+        fprintf(fp, "%s|%d|%s|%s|%s|%s\n",
                 current->name,
                 current->age,
                 current->gender,
                 current->department,
-                current->phone);
+                current->phone,
+                current->schedule);
         current = current->next;
     }
 
@@ -135,8 +136,11 @@ DoctorNode *load_doctors(const char *filename) {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
 
-        char name[MAX_NAME], gender[MAX_GENDER], department[MAX_DEPT], phone[MAX_PHONE];
+        char name[MAX_NAME], gender[MAX_GENDER], department[MAX_DEPT], phone[MAX_PHONE], schedule[MAX_DEPT];
         int age;
+        
+        // 初始化schedule为空（兼容旧数据）
+        memset(schedule, 0, sizeof(schedule));
 
         // 解析数据
         char *token = strtok(line, "|");
@@ -163,7 +167,14 @@ DoctorNode *load_doctors(const char *filename) {
         strncpy(phone, token, MAX_PHONE - 1);
         phone[MAX_PHONE - 1] = '\0';
 
-        DoctorNode d = make_doctor(name, age, gender, department, phone);
+        // 读取排班字段（可选，兼容旧数据）
+        token = strtok(NULL, "|");
+        if (token != NULL) {
+            strncpy(schedule, token, MAX_DEPT - 1);
+            schedule[MAX_DEPT - 1] = '\0';
+        }
+
+        DoctorNode d = make_doctor(name, age, gender, department, phone, schedule);
         add_doctor(&head, d);
     }
 
