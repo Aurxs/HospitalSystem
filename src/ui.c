@@ -40,6 +40,7 @@
 #include "../include/bill.h"         /* 费用管理函数 */
 #include "../include/auth.h"         /* 用户认证函数 */
 #include "../include/file_io.h"      /* 文件读写函数 */
+#include "../include/patient_portal.h" /* 患者门户界面 */
 
 #if defined(_WIN32) || defined(WIN32)
 #include <curses.h>     /* Windows PDCurses */
@@ -459,6 +460,16 @@ void ui_cleanup(void) {
 
     /* 结束ncurses模式，恢复终端设置 */
     endwin();
+}
+
+/*
+ * ============================================================================
+ * 保存挂号数据函数
+ * 功能: 供患者门户界面调用保存挂号数据
+ * ============================================================================
+ */
+void save_registrations_data(void) {
+    save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
 }
 
 /*
@@ -3708,8 +3719,17 @@ int ui_main(void) {
         clear();
         refresh();
         int role = ui_login_screen();
-        if (role == -2) { running = 0; } else if (role >= 0) {
-            ui_main_screen(role);
+        if (role == -2) { 
+            running = 0; 
+        } else if (role >= 0) {
+            /* 根据角色进入不同的界面 */
+            if (role == ROLE_PATIENT) {
+                /* 患者使用独立的患者门户界面 */
+                ui_patient_portal_main(g_current_user->username);
+            } else {
+                /* 医生和管理员使用原有的主界面 */
+                ui_main_screen(role);
+            }
             g_current_user = NULL;
         }
     }

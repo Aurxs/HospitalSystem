@@ -57,6 +57,7 @@ set(CORE_SOURCES
         src/ui.c
         src/registration.c
         src/bill.c
+        src/ui/patient_portal.c
 )
 
 set(APP_SOURCES
