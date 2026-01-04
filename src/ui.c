@@ -4211,6 +4211,205 @@ static int is_patient_of_doctor(const char *patient_name, const char *doctor_nam
     return 0;
 }
 
+/* 医生专用：查询自己的患者 */
+static void ui_doctor_search_patient(WINDOW *parent_win) {
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    WINDOW *w = newwin(12, 50, (max_y - 12) / 2, (max_x - 50) / 2);
+    keypad(w, TRUE);
+    char kw[MAX_NAME] = "";
+    int ch;
+    while (1) {
+        werase(w);
+        ui_draw_box(w, "查询我的患者");
+        mvwprintw(w, 2, 3, "姓名: [%-25s]", kw);
+        mvwprintw(w, 4, 3, "[Enter]查询  [ESC]返回");
+        mvwprintw(w, 6, 3, "只在您的患者中查询");
+        wrefresh(w);
+        ch = wgetch(w);
+        if (ch == '\n' || ch == KEY_ENTER) {
+            mvwprintw(w, 2, 10, "[%-25s]", "");
+            wrefresh(w);
+            if (ui_input_string(w, 2, 11, kw, 25, 0) >= 0) {
+                /* 只在医生自己的患者中查找 */
+                PatientNode *p = g_patients;
+                PatientNode *found = NULL;
+                while (p != NULL) {
+                    if (is_patient_of_doctor(p->name, g_current_user->username) &&
+                        strstr(p->name, kw) != NULL) {
+                        found = p;
+                        break;
+                    }
+                    p = p->next;
+                }
+                if (found) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "找到: %s, %d岁, %s", 
+                             found->name, found->age, found->phone);
+                    ui_show_message("结果", msg, 1);
+                } else {
+                    ui_show_message("结果", "在您的患者中未找到", 3);
+                }
+            }
+        } else if (ch == 27) {
+            delwin(w);
+            touchwin(stdscr);
+            refresh();
+            return;
+        }
+    }
+}
+
+/* 医生专用：查询自己的挂号记录 */
+static void ui_doctor_search_registration(WINDOW *parent_win) {
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    WINDOW *w = newwin(12, 50, (max_y - 12) / 2, (max_x - 50) / 2);
+    keypad(w, TRUE);
+    char kw[MAX_NAME] = "";
+    int ch;
+    while (1) {
+        werase(w);
+        ui_draw_box(w, "查询我的挂号");
+        mvwprintw(w, 2, 3, "患者姓名: [%-25s]", kw);
+        mvwprintw(w, 4, 3, "[Enter]查询  [ESC]返回");
+        mvwprintw(w, 6, 3, "只在您的挂号中查询");
+        wrefresh(w);
+        ch = wgetch(w);
+        if (ch == '\n' || ch == KEY_ENTER) {
+            mvwprintw(w, 2, 14, "[%-25s]", "");
+            wrefresh(w);
+            if (ui_input_string(w, 2, 15, kw, 25, 0) >= 0) {
+                /* 只在医生自己的挂号记录中查找 */
+                RegisterNode *r = g_registrations;
+                RegisterNode *found = NULL;
+                while (r != NULL) {
+                    if (strcmp(r->doctorName, g_current_user->username) == 0 &&
+                        strstr(r->patientName, kw) != NULL) {
+                        found = r;
+                        break;
+                    }
+                    r = r->next;
+                }
+                if (found) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "找到: %s, 科室: %s, 日期: %s", 
+                             found->patientName, found->department, found->date);
+                    ui_show_message("结果", msg, 1);
+                } else {
+                    ui_show_message("结果", "在您的挂号中未找到", 3);
+                }
+            }
+        } else if (ch == 27) {
+            delwin(w);
+            touchwin(stdscr);
+            refresh();
+            return;
+        }
+    }
+}
+
+/* 医生专用：为自己的患者添加费用 */
+static int ui_doctor_add_bill_form(WINDOW *parent_win) {
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    WINDOW *w = newwin(14, 60, (max_y - 14) / 2, (max_x - 60) / 2);
+    keypad(w, TRUE);
+    char pn[MAX_NAME] = "", item[MAX_NAME] = "", amt[20] = "";
+    int cf = 0, ch;
+    
+    /* 先统计医生的患者数量并显示提示 */
+    int my_patient_count = 0;
+    PatientNode *pt = g_patients;
+    while (pt != NULL) {
+        if (is_patient_of_doctor(pt->name, g_current_user->username)) {
+            my_patient_count++;
+        }
+        pt = pt->next;
+    }
+    
+    while (1) {
+        werase(w);
+        ui_draw_box(w, "添加患者费用");
+        mvwprintw(w, 2, 3, "患者姓名:");
+        mvwprintw(w, 4, 3, "收费项目:");
+        mvwprintw(w, 6, 3, "金    额:");
+        mvwprintw(w, 8, 3, "(只能为您的患者添加费用)");
+        int i;
+        for (i = 0; i < 3; i++) {
+            if (cf == i)
+                wattron(w, COLOR_PAIR(COLOR_PAIR_SELECT));
+            switch (i) {
+                case 0: mvwprintw(w, 2, 14, "[%-30s]", pn);
+                    break;
+                case 1: mvwprintw(w, 4, 14, "[%-30s]", item);
+                    break;
+                case 2: mvwprintw(w, 6, 14, "[%-30s]", amt);
+                    break;
+            }
+            if (cf == i)
+                wattroff(w, COLOR_PAIR(COLOR_PAIR_SELECT));
+        }
+        if (cf == 3)
+            wattron(w, COLOR_PAIR(COLOR_PAIR_SELECT)|A_BOLD);
+        mvwprintw(w, 11, 15, "  [ 确认 ]  ");
+        if (cf == 3)
+            wattroff(w, COLOR_PAIR(COLOR_PAIR_SELECT)|A_BOLD);
+        wrefresh(w);
+        ch = wgetch(w);
+        switch (ch) {
+            case KEY_UP: if (cf > 0) cf--;
+                break;
+            case KEY_DOWN:
+            case '\t': if (cf < 3) cf++;
+                break;
+            case '\n':
+            case KEY_ENTER:
+                if (cf < 3) {
+                    char *t = NULL;
+                    int ry = 2 + cf * 2;
+                    switch (cf) {
+                        case 0: t = pn;
+                            break;
+                        case 1: t = item;
+                            break;
+                        case 2: t = amt;
+                            break;
+                    }
+                    if (t) {
+                        mvwprintw(w, ry, 14, "[%-30s]", "");
+                        wrefresh(w);
+                        ui_input_string(w, ry, 15, t, 30, 0);
+                    }
+                    cf++;
+                } else {
+                    if (strlen(pn) == 0) {
+                        ui_show_message("错误", "患者姓名必填", 2);
+                    } else if (!is_patient_of_doctor(pn, g_current_user->username)) {
+                        /* 检查是否是医生自己的患者 */
+                        ui_show_message("错误", "该患者不是您的患者，无法添加费用", 2);
+                    } else {
+                        double a = atof(amt);
+                        BillNode b = make_bill(pn, item, a);
+                        add_bill(&g_bills, b);
+                        save_bills(DATA_PATH_BILLS, g_bills);
+                        ui_show_message("成功", "费用添加成功", 1);
+                        delwin(w);
+                        touchwin(stdscr);
+                        refresh();
+                        return 0;
+                    }
+                }
+                break;
+            case 27: 
+                delwin(w);
+                touchwin(stdscr);
+                refresh();
+                return -1;
+        }
+    }
+}
+
 /* 医生患者管理 - 只显示和管理自己的患者 */
 void ui_doctor_patient_management(WINDOW *content_win) {
     int max_y, max_x;
@@ -4341,7 +4540,7 @@ void ui_doctor_patient_management(WINDOW *content_win) {
                 break;
             case 's':
             case 'S':
-                ui_search_patient(content_win);
+                ui_doctor_search_patient(content_win);
                 break;
             case 'b':
             case 'B':
@@ -4477,7 +4676,7 @@ void ui_doctor_registration_management(WINDOW *content_win) {
                 break;
             case 's':
             case 'S':
-                ui_search_registration(content_win);
+                ui_doctor_search_registration(content_win);
                 break;
             case 'b':
             case 'B':
@@ -4606,7 +4805,7 @@ void ui_doctor_bill_management(WINDOW *content_win) {
                 if (my_patient_count == 0) {
                     ui_show_message("提示", "您目前没有患者，无法添加费用", 3);
                 } else {
-                    ui_add_bill_form(content_win);
+                    ui_doctor_add_bill_form(content_win);
                 }
                 break;
             }
