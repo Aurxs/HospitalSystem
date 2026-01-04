@@ -666,8 +666,6 @@ int ui_confirm_dialog(const char *title, const char *message) {
                 break;
             case '\n':
             case KEY_ENTER:
-                delwin(dialog_win);
-                touchwin(stdscr);
                 close_popup_window(dialog_win);
                 return (selected == 0) ? 1 : 0;
             case 27: /* ESC键 */
