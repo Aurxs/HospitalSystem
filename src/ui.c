@@ -1144,8 +1144,9 @@ void ui_draw_sidebar(WINDOW *win, int role, int selected) {
     int menu_count = 8;
     int start_y = 2;
     int i;
+    int display_row = 0; /* 实际显示行号，用于解决隐藏菜单项导致的位置问题 */
 
-    for (i = 0; i < menu_count && start_y + i < max_y - 1; i++) {
+    for (i = 0; i < menu_count && start_y + display_row < max_y - 1; i++) {
         /* 用户管理只对管理员可见 */
         if (i == MENU_USER_MGMT && role != ROLE_ADMIN) {
             continue;
@@ -1154,11 +1155,12 @@ void ui_draw_sidebar(WINDOW *win, int role, int selected) {
         /* 高亮显示选中项 */
         if (i == selected) {
             wattron(win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
-            mvwprintw(win, start_y + i, 1, " %-17s", menu_items[i]);
+            mvwprintw(win, start_y + display_row, 1, " %-17s", menu_items[i]);
             wattroff(win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
         } else {
-            mvwprintw(win, start_y + i, 2, "%-17s", menu_items[i]);
+            mvwprintw(win, start_y + display_row, 2, "%-17s", menu_items[i]);
         }
+        display_row++; /* 只有显示的菜单项才增加行号 */
     }
 
     wrefresh(win);
