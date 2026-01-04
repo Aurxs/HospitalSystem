@@ -476,8 +476,6 @@ void ui_patient_portal_main(const char *patient_name) {
                         delwin(sidebar_win);
                         delwin(content_win);
                         delwin(status_win);
-                        /* 设置特殊返回标志以完全退出 */
-                        g_current_user = NULL;
                         return;
                 }
                 touchwin(stdscr);
