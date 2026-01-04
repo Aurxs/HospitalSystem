@@ -24,9 +24,10 @@
  * ============================================================================
  */
 #define PATIENT_MENU_REGISTER    0    /* 挂号 */
-#define PATIENT_MENU_QUERY_BILL  1    /* 费用查询 */
-#define PATIENT_MENU_LOGOUT      2    /* 退出登录 */
-#define PATIENT_MENU_EXIT        3    /* 退出系统 */
+#define PATIENT_MENU_MY_REGISTER 1    /* 我的挂号 */
+#define PATIENT_MENU_QUERY_BILL  2    /* 费用查询 */
+#define PATIENT_MENU_LOGOUT      3    /* 退出登录 */
+#define PATIENT_MENU_EXIT        4    /* 退出系统 */
 
 /*
  * ============================================================================

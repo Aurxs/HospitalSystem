@@ -46,12 +46,13 @@ void ui_patient_portal_draw_sidebar(WINDOW *win, int selected) {
 
     const char *menu_items[] = {
         "1. 我要挂号",
-        "2. 费用查询",
-        "3. 退出登录",
-        "4. 退出系统"
+        "2. 我的挂号",
+        "3. 费用查询",
+        "4. 退出登录",
+        "5. 退出系统"
     };
 
-    int menu_count = 4;
+    int menu_count = 5;
     int start_y = 2;
     int i;
 
@@ -70,123 +71,182 @@ void ui_patient_portal_draw_sidebar(WINDOW *win, int selected) {
 
 /*
  * ============================================================================
- * 患者挂号表单
- * 功能: 让患者选择医生和科室进行挂号
+ * 患者挂号界面（带医生列表和筛选）
+ * 功能: 显示医生列表，支持按科室筛选，选择医生进行挂号
  * ============================================================================
  */
 int ui_patient_register_form(WINDOW *parent_win, const char *patient_name) {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
-    int form_height = 14;
-    int form_width = 60;
-    int start_y = (max_y - form_height) / 2;
-    int start_x = (max_x - form_width) / 2;
+    WINDOW *content_win = parent_win;
+    keypad(content_win, TRUE);
 
-    WINDOW *form_win = newwin(form_height, form_width, start_y, start_x);
-    keypad(form_win, TRUE);
-
-    char doctorName[MAX_NAME] = "";
-    char department[MAX_DEPT] = "";
-    char date[MAX_NAME] = "";
-
-    /* 自动生成今天的日期 */
-    time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
-    snprintf(date, sizeof(date), "%04d-%02d-%02d", 
-             tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday);
-
-    int current_field = 0;
+    int selected_row = 0;
+    int start_index = 0;
+    char dept_filter[MAX_DEPT] = "";
     int ch;
-    int label_x = 3;
-    int input_x = 14;
 
     while (1) {
-        werase(form_win);
-        ui_draw_box(form_win, "预约挂号");
+        werase(content_win);
+        ui_draw_box(content_win, "选择医生挂号");
 
-        /* 显示患者姓名（自动填入，不可编辑） */
-        mvwprintw(form_win, 2, label_x, "患者姓名: %s", patient_name);
+        int win_max_y, win_max_x;
+        getmaxyx(content_win, win_max_y, win_max_x);
 
-        mvwprintw(form_win, 4, label_x, "医生姓名:");
-        mvwprintw(form_win, 6, label_x, "科    室:");
-        mvwprintw(form_win, 8, label_x, "挂号日期:");
+        /* 显示筛选区域 */
+        mvwprintw(content_win, 1, 2, "科室筛选: [%-15s] 按F键输入筛选, C键清除筛选", dept_filter);
 
-        /* 绘制输入框 */
+        /* 表头 */
+        const char *headers[] = {"序号", "姓名", "科室", "排班", "电话"};
+        int col_widths[] = {6, 12, 15, 20, 15};
+        int col_count = 5;
+        int x = 1;
         int i;
-        for (i = 0; i < 3; i++) {
-            if (current_field == i)
-                wattron(form_win, COLOR_PAIR(COLOR_PAIR_SELECT));
-            switch (i) {
-                case 0: mvwprintw(form_win, 4, input_x, "[%-30s]", doctorName);
-                    break;
-                case 1: mvwprintw(form_win, 6, input_x, "[%-30s]", department);
-                    break;
-                case 2: mvwprintw(form_win, 8, input_x, "[%-30s]", date);
-                    break;
+
+        wattron(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+        for (i = 0; i < col_count; i++) {
+            mvwprintw(content_win, 3, x, "%-*s", col_widths[i], headers[i]);
+            x += col_widths[i] + 1;
+        }
+        wattroff(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+
+        /* 统计符合条件的医生数量 */
+        DoctorNode *cur = g_doctors;
+        int total_count = 0;
+        while (cur != NULL) {
+            if (strlen(dept_filter) == 0 || strstr(cur->department, dept_filter) != NULL) {
+                total_count++;
             }
-            if (current_field == i)
-                wattroff(form_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+            cur = cur->next;
         }
 
-        /* 确认按钮 */
-        if (current_field == 3)
-            wattron(form_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
-        mvwprintw(form_win, 11, 15, "  [ 确认挂号 ]  ");
-        if (current_field == 3)
-            wattroff(form_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
+        /* 显示医生列表 */
+        cur = g_doctors;
+        int display_row = 0;
+        int row_y = 5;
+        int filtered_idx = 0;
 
-        wrefresh(form_win);
-        ch = wgetch(form_win);
+        while (cur != NULL && row_y < win_max_y - 4) {
+            /* 应用科室筛选 */
+            if (strlen(dept_filter) == 0 || strstr(cur->department, dept_filter) != NULL) {
+                if (filtered_idx >= start_index) {
+                    x = 1;
+                    if (display_row == selected_row)
+                        wattron(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+
+                    mvwprintw(content_win, row_y, x, "%-*d", col_widths[0], filtered_idx + 1);
+                    x += col_widths[0] + 1;
+                    mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[1], col_widths[1], cur->name);
+                    x += col_widths[1] + 1;
+                    mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[2], col_widths[2], cur->department);
+                    x += col_widths[2] + 1;
+                    mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[3], col_widths[3], cur->schedule);
+                    x += col_widths[3] + 1;
+                    mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[4], col_widths[4], cur->phone);
+
+                    if (display_row == selected_row)
+                        wattroff(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+
+                    row_y++;
+                    display_row++;
+                }
+                filtered_idx++;
+            }
+            cur = cur->next;
+        }
+
+        if (total_count == 0) {
+            mvwprintw(content_win, 6, 3, "暂无医生信息，请联系管理员添加");
+        }
+
+        /* 显示操作提示 */
+        mvwprintw(content_win, win_max_y - 3, 2, "共 %d 位医生", total_count);
+        mvwprintw(content_win, win_max_y - 2, 2, "[↑↓]选择 [Enter]挂号 [F]筛选 [C]清除 [ESC]返回");
+
+        wrefresh(content_win);
+        ch = wgetch(content_win);
 
         switch (ch) {
             case KEY_UP:
-                if (current_field > 0) current_field--;
+            case 'k':
+                if (selected_row > 0) selected_row--;
+                else if (start_index > 0) { start_index--; }
                 break;
             case KEY_DOWN:
-            case '\t':
-                if (current_field < 3) current_field++;
+            case 'j':
+                if (selected_row < display_row - 1) selected_row++;
+                else if (start_index + display_row < total_count) start_index++;
+                break;
+            case 'f':
+            case 'F': {
+                /* 输入科室筛选 */
+                mvwprintw(content_win, 1, 14, "[%-15s]", "");
+                wrefresh(content_win);
+                ui_input_string(content_win, 1, 15, dept_filter, MAX_DEPT - 1, 0);
+                selected_row = 0;
+                start_index = 0;
+                break;
+            }
+            case 'c':
+            case 'C':
+                /* 清除筛选 */
+                memset(dept_filter, 0, sizeof(dept_filter));
+                selected_row = 0;
+                start_index = 0;
                 break;
             case '\n':
-            case KEY_ENTER:
-                if (current_field < 3) {
-                    char *target = NULL;
-                    int row_y = 4 + current_field * 2;
-                    int max_len = 30;
+            case KEY_ENTER: {
+                if (total_count == 0) break;
 
-                    switch (current_field) {
-                        case 0: target = doctorName; max_len = MAX_NAME - 1; break;
-                        case 1: target = department; max_len = MAX_DEPT - 1; break;
-                        case 2: target = date; max_len = MAX_NAME - 1; break;
-                    }
+                /* 找到选中的医生 */
+                DoctorNode *selected_doctor = NULL;
+                cur = g_doctors;
+                int idx = 0;
+                int target_idx = start_index + selected_row;
 
-                    if (target) {
-                        mvwprintw(form_win, row_y, input_x, "[%-30s]", "");
-                        wrefresh(form_win);
-                        ui_input_string(form_win, row_y, input_x + 1, target, max_len, 0);
+                while (cur != NULL) {
+                    if (strlen(dept_filter) == 0 || strstr(cur->department, dept_filter) != NULL) {
+                        if (idx == target_idx) {
+                            selected_doctor = cur;
+                            break;
+                        }
+                        idx++;
                     }
-                    current_field++;
-                } else {
-                    /* 验证必填项 */
-                    if (strlen(doctorName) == 0) {
-                        ui_show_message("错误", "医生姓名为必填项", 2);
-                    } else if (strlen(date) == 0) {
-                        ui_show_message("错误", "挂号日期为必填项", 2);
-                    } else {
+                    cur = cur->next;
+                }
+
+                if (selected_doctor != NULL) {
+                    /* 确认挂号对话框 */
+                    char confirm_msg[256];
+                    snprintf(confirm_msg, sizeof(confirm_msg), 
+                             "确定预约 %s (%s) 医生吗？", 
+                             selected_doctor->name, selected_doctor->department);
+                    
+                    if (ui_confirm_dialog("确认挂号", confirm_msg)) {
+                        /* 生成今天的日期 */
+                        time_t now = time(NULL);
+                        struct tm *tm_info = localtime(&now);
+                        char date[MAX_NAME];
+                        snprintf(date, sizeof(date), "%04d-%02d-%02d", 
+                                 tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday);
+
                         /* 添加挂号记录 */
-                        RegisterNode r = make_registration(patient_name, doctorName, department, date);
+                        RegisterNode r = make_registration(patient_name, selected_doctor->name, 
+                                                           selected_doctor->department, date);
                         add_registration(&g_registrations, r);
                         save_registrations_data();
                         ui_show_message("成功", "挂号成功！请按时就诊。", 1);
-                        delwin(form_win);
                         touchwin(stdscr);
                         refresh();
                         return 0;
                     }
                 }
                 break;
+            }
             case 27: /* ESC */
-                delwin(form_win);
+            case 'b':
+            case 'B':
                 touchwin(stdscr);
                 refresh();
                 return -1;
@@ -238,7 +298,6 @@ void ui_patient_query_bills(WINDOW *content_win, const char *patient_name) {
 
         /* 显示费用记录 */
         cur = g_bills;
-        int index = 0;
         int display_row = 0;
         int row_y = 3;
         double total_amount = 0.0;
@@ -373,6 +432,10 @@ void ui_patient_view_registrations(WINDOW *content_win, const char *patient_name
             cur = cur->next;
         }
 
+        if (total_count == 0) {
+            mvwprintw(content_win, 4, 3, "暂无挂号记录");
+        }
+
         mvwprintw(content_win, max_y - 2, 2, "共 %d 条记录  [↑↓]选择  [ESC/B]返回", total_count);
 
         wrefresh(content_win);
@@ -418,7 +481,7 @@ void ui_patient_portal_main(const char *patient_name) {
     int selected = 0;
     int ch;
     int running = 1;
-    int menu_count = 4;
+    int menu_count = 5;
 
     while (running) {
         touchwin(stdscr);
@@ -438,12 +501,13 @@ void ui_patient_portal_main(const char *patient_name) {
         ui_draw_box(content_win, "欢迎使用患者服务平台");
         mvwprintw(content_win, 3, 3, "尊敬的 %s，欢迎您！", patient_name);
         mvwprintw(content_win, 5, 3, "您可以进行以下操作:");
-        mvwprintw(content_win, 7, 5, "• 我要挂号 - 预约医生就诊");
-        mvwprintw(content_win, 8, 5, "• 费用查询 - 查看您的费用记录");
-        mvwprintw(content_win, 10, 3, "使用 ↑↓ 键选择菜单项，按 Enter 进入");
+        mvwprintw(content_win, 7, 5, "• 我要挂号 - 查看医生列表，选择医生预约挂号");
+        mvwprintw(content_win, 8, 5, "• 我的挂号 - 查看您已预约的挂号记录");
+        mvwprintw(content_win, 9, 5, "• 费用查询 - 查看您的费用记录");
+        mvwprintw(content_win, 11, 3, "使用 ↑↓ 键选择菜单项，按 Enter 进入");
 
         wattron(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
-        mvwprintw(content_win, 12, 3, "提示: 患者账户只能查看自己的记录");
+        mvwprintw(content_win, 13, 3, "提示: 患者账户只能查看自己的记录");
         wattroff(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
 
         wrefresh(content_win);
@@ -464,6 +528,9 @@ void ui_patient_portal_main(const char *patient_name) {
                 switch (selected) {
                     case PATIENT_MENU_REGISTER:
                         ui_patient_register_form(content_win, patient_name);
+                        break;
+                    case PATIENT_MENU_MY_REGISTER:
+                        ui_patient_view_registrations(content_win, patient_name);
                         break;
                     case PATIENT_MENU_QUERY_BILL:
                         ui_patient_query_bills(content_win, patient_name);
