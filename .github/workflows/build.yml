@@ -55,7 +55,7 @@ jobs:
 
       # --- Build ---
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Release --target HospitalSystem
 
       # --- Upload Artifacts ---
       - name: Upload Artifacts
@@ -66,8 +66,6 @@ jobs:
             build/HospitalSystem
             build/HospitalSystem.exe
             build/Release/HospitalSystem.exe
-            build/RunTest
-            build/RunTest.exe
-            build/Release/RunTest.exe
             build/Release/*.dll
+            data
           if-no-files-found: ignore
