@@ -739,4 +739,50 @@ int count_list_nodes(void *head, int type);
  */
 const char *get_role_string(int role);
 
+/*
+ * ============================================================================
+ * 患者专用界面函数声明
+ * 说明: 这些函数仅供患者用户使用，与管理员/医生界面完全分开
+ * ============================================================================
+ */
+
+/**
+ * 函数名: ui_patient_main_screen
+ * 功能: 患者专用主界面
+ * 说明: 显示患者专用菜单，只包含挂号和费用查询功能
+ * 参数: 无
+ * 返回值: 无
+ */
+void ui_patient_main_screen(void);
+
+/**
+ * 函数名: ui_patient_register
+ * 功能: 患者挂号界面
+ * 说明: 显示医生列表（可按科室筛选），患者可选择医生进行挂号
+ * 参数: 
+ *   - content_win: 内容区域窗口指针
+ * 返回值: 无
+ */
+void ui_patient_register(WINDOW *content_win);
+
+/**
+ * 函数名: ui_patient_view_registrations
+ * 功能: 查看患者自己的挂号记录
+ * 说明: 只显示当前登录患者的挂号记录
+ * 参数: 
+ *   - content_win: 内容区域窗口指针
+ * 返回值: 无
+ */
+void ui_patient_view_registrations(WINDOW *content_win);
+
+/**
+ * 函数名: ui_patient_view_bills
+ * 功能: 患者费用查询界面
+ * 说明: 只显示当前登录患者的费用记录（只读）
+ * 参数: 
+ *   - content_win: 内容区域窗口指针
+ * 返回值: 无
+ */
+void ui_patient_view_bills(WINDOW *content_win);
+
 #endif //HOSPITALSYSTEM_UI_H

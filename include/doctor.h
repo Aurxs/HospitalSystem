@@ -10,9 +10,10 @@
  *      gender - 医生性别
  *      department - 医生科室
  *      phone - 医生电话号码
+ *      schedule - 排班记录
  *返回值：构造好的医生节点指针
  */
-DoctorNode make_doctor(const char *name, int age, const char *gender, const char *department, const char *phone);
+DoctorNode make_doctor(const char *name, int age, const char *gender, const char *department, const char *phone, const char *schedule);
 
 /**
  * 功能：添加一个新医生

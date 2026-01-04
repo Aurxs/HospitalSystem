@@ -31,6 +31,7 @@ typedef struct DoctorNode {
     char gender[MAX_GENDER];
     char department[MAX_DEPT];   // 专业领域/科室
     char phone[MAX_PHONE];
+    char schedule[MAX_DESC];     // 排班记录（如：周一上午、周三全天）
     
     struct DoctorNode* next;
 } DoctorNode;

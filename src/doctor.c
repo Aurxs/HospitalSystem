@@ -8,7 +8,7 @@
 #include "../include/doctor.h"
 
 // 工具: 构造一个医生记录
-DoctorNode make_doctor(const char *name, int age, const char *gender, const char *department, const char *phone) {
+DoctorNode make_doctor(const char *name, int age, const char *gender, const char *department, const char *phone, const char *schedule) {
     DoctorNode p;
     memset(&p, 0, sizeof(p));
     snprintf(p.name, sizeof(p.name), "%s", name);
@@ -16,6 +16,7 @@ DoctorNode make_doctor(const char *name, int age, const char *gender, const char
     snprintf(p.gender, sizeof(p.gender), "%s", gender);
     snprintf(p.phone, sizeof(p.phone), "%s", phone);
     snprintf(p.department, sizeof(p.department), "%s", department);
+    snprintf(p.schedule, sizeof(p.schedule), "%s", schedule ? schedule : "");
     p.next = NULL;
     return p;
 }
@@ -34,6 +35,7 @@ DoctorNode *add_doctor(DoctorNode **head, const DoctorNode newInfo) {
     strcpy(newNode->gender, newInfo.gender);
     strcpy(newNode->phone, newInfo.phone);
     strcpy(newNode->department, newInfo.department);
+    strcpy(newNode->schedule, newInfo.schedule);
 
     newNode->next = NULL;
 
@@ -87,6 +89,7 @@ DoctorNode *modify_doctor(DoctorNode *head, const char *phone, const DoctorNode 
             strcpy(current->gender, newInfo.gender);
             strcpy(current->phone, newInfo.phone);
             strcpy(current->department, newInfo.department);
+            strcpy(current->schedule, newInfo.schedule);
             return current; // 返回修改后的节点指针
         }
         current = current->next; // 继续下一个节点

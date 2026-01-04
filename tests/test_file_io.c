@@ -80,8 +80,8 @@ void test_save_load_doctors() {
 
     // 创建医生链表
     DoctorNode *head = NULL;
-    DoctorNode d1 = make_doctor("王医生", 40, "男", "内科", "13800138001");
-    DoctorNode d2 = make_doctor("张医生", 35, "女", "外科", "13900139001");
+    DoctorNode d1 = make_doctor("王医生", 40, "男", "内科", "13800138001", "周一上午");
+    DoctorNode d2 = make_doctor("张医生", 35, "女", "外科", "13900139001", "周三全天");
     add_doctor(&head, d1);
     add_doctor(&head, d2);
 
@@ -97,10 +97,12 @@ void test_save_load_doctors() {
     assert(strcmp(loadedHead->name, "王医生") == 0);
     assert(loadedHead->age == 40);
     assert(strcmp(loadedHead->department, "内科") == 0);
+    assert(strcmp(loadedHead->schedule, "周一上午") == 0);
 
     assert(loadedHead->next != NULL);
     assert(strcmp(loadedHead->next->name, "张医生") == 0);
     assert(strcmp(loadedHead->next->department, "外科") == 0);
+    assert(strcmp(loadedHead->next->schedule, "周三全天") == 0);
 
     // 清理内存
     while (head != NULL) {
