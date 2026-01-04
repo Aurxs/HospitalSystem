@@ -6,9 +6,20 @@
  *       支持患者、医生、药品、挂号、费用和用户管理
  * 
  * 代码架构说明:
- *   - main.c: 包含主程序入口和业务流程控制
- *   - src/ui.c: 包含UI组件函数（表格、表单、对话框等）
+ *   - main.c: 主程序入口，负责业务流程控制和调度
+ *             包含：初始化 → 登录 → 角色分发 → 界面调用 → 清理
+ *   
+ *   - src/ui.c: UI基础组件和管理员/医生界面
+ *               基础组件：ui_draw_box, ui_show_message, ui_confirm_dialog,
+ *                        ui_input_string, ui_draw_table_header 等
+ *               界面函数：ui_login_screen, ui_main_screen, 
+ *                        ui_patient_management, ui_doctor_management 等
+ *   
  *   - src/ui/patient_portal.c: 患者专属界面组件
+ *               包含：ui_patient_portal_main (患者主界面)
+ *                    ui_patient_register_form (挂号界面，带医生列表筛选)
+ *                    ui_patient_view_registrations (我的挂号记录)
+ *                    ui_patient_query_bills (费用查询)
  * ============================================================================
  */
 
@@ -23,10 +34,12 @@
 /**
  * 主函数 - 程序入口
  * 功能: 控制整个程序的业务流程
- *   1. 初始化UI和数据
- *   2. 显示登录界面
- *   3. 根据用户角色分发到不同的界面
- *   4. 循环处理直到用户退出
+ *   1. 调用 ui_init() 初始化UI系统和加载数据
+ *   2. 循环显示登录界面，获取用户角色
+ *   3. 根据用户角色分发到不同的界面：
+ *      - ROLE_PATIENT: 调用 ui_patient_portal_main() 患者门户
+ *      - ROLE_DOCTOR/ROLE_ADMIN: 调用 ui_main_screen() 管理界面
+ *   4. 调用 ui_cleanup() 保存数据并清理资源
  */
 int main() {
     /* 初始化UI系统和数据 */
