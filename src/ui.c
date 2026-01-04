@@ -1890,9 +1890,9 @@ int ui_draw_doctor_table(WINDOW *win, int start_index, int selected_row) {
     int max_y, max_x;
     getmaxyx(win, max_y, max_x);
 
-    const char *headers[] = {"序号", "姓名", "年龄", "性别", "科室", "电话"};
-    int col_widths[] = {4, 12, 4, 4, 15, 13};
-    int col_count = 6;
+    const char *headers[] = {"序号", "姓名", "年龄", "性别", "科室", "电话", "排班"};
+    int col_widths[] = {4, 10, 4, 4, 12, 13, 12};
+    int col_count = 7;
 
     ui_draw_table_header(win, headers, col_count, col_widths);
 
@@ -1929,6 +1929,9 @@ int ui_draw_doctor_table(WINDOW *win, int start_index, int selected_row) {
         x += col_widths[4] + 1;
 
         mvwprintw(win, row_y, x, "%-*.*s", col_widths[5], col_widths[5], current->phone);
+        x += col_widths[5] + 1;
+
+        mvwprintw(win, row_y, x, "%-*.*s", col_widths[6], col_widths[6], current->schedule);
 
         if (display_row == selected_row) {
             wattroff(win, COLOR_PAIR(COLOR_PAIR_SELECT));
@@ -1947,7 +1950,7 @@ int ui_add_doctor_form(WINDOW *parent_win) {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
-    int form_height = 16;
+    int form_height = 18;
     int form_width = 60;
     int start_y = (max_y - form_height) / 2;
     int start_x = (max_x - form_width) / 2;
@@ -1960,9 +1963,10 @@ int ui_add_doctor_form(WINDOW *parent_win) {
     char gender[MAX_GENDER] = "";
     char department[MAX_DEPT] = "";
     char phone[MAX_PHONE] = "";
+    char schedule[MAX_DESC] = "";
 
     int current_field = 0;
-    int field_count = 6;
+    int field_count = 7;
     int ch;
     int label_x = 3;
     int input_x = 15;
@@ -1976,9 +1980,10 @@ int ui_add_doctor_form(WINDOW *parent_win) {
         mvwprintw(form_win, 6, label_x, "性    别:");
         mvwprintw(form_win, 8, label_x, "科    室:");
         mvwprintw(form_win, 10, label_x, "电    话:");
+        mvwprintw(form_win, 12, label_x, "排    班:");
 
         int i;
-        for (i = 0; i < 5; i++) {
+        for (i = 0; i < 6; i++) {
             if (current_field == i) {
                 wattron(form_win, COLOR_PAIR(COLOR_PAIR_SELECT));
             }
@@ -1993,17 +1998,19 @@ int ui_add_doctor_form(WINDOW *parent_win) {
                     break;
                 case 4: mvwprintw(form_win, 10, input_x, "[%-30s]", phone);
                     break;
+                case 5: mvwprintw(form_win, 12, input_x, "[%-30s]", schedule);
+                    break;
             }
             if (current_field == i) {
                 wattroff(form_win, COLOR_PAIR(COLOR_PAIR_SELECT));
             }
         }
 
-        if (current_field == 5) {
+        if (current_field == 6) {
             wattron(form_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
         }
-        mvwprintw(form_win, 13, 15, "  [ 确认添加 ]  ");
-        if (current_field == 5) {
+        mvwprintw(form_win, 15, 15, "  [ 确认添加 ]  ");
+        if (current_field == 6) {
             wattroff(form_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
         }
 
@@ -2021,7 +2028,7 @@ int ui_add_doctor_form(WINDOW *parent_win) {
                 break;
             case '\n':
             case KEY_ENTER:
-                if (current_field < 5) {
+                if (current_field < 6) {
                     int row_y = 2 + current_field * 2;
                     char *target = NULL;
                     int max_len = 30;
@@ -2042,6 +2049,9 @@ int ui_add_doctor_form(WINDOW *parent_win) {
                         case 4: target = phone;
                             max_len = MAX_PHONE - 1;
                             break;
+                        case 5: target = schedule;
+                            max_len = 30;
+                            break;
                     }
 
                     if (target != NULL) {
@@ -2055,7 +2065,7 @@ int ui_add_doctor_form(WINDOW *parent_win) {
                         ui_show_message("错误", "姓名和电话为必填项", 2);
                     } else {
                         int age = atoi(age_str);
-                        DoctorNode d = make_doctor(name, age, gender, department, phone);
+                        DoctorNode d = make_doctor(name, age, gender, department, phone, schedule);
                         add_doctor(&g_doctors, d);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
                         ui_show_message("成功", "医生信息添加成功", 1);
@@ -2077,7 +2087,7 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
-    int form_height = 16;
+    int form_height = 18;
     int form_width = 60;
     int start_y = (max_y - form_height) / 2;
     int start_x = (max_x - form_width) / 2;
@@ -2091,6 +2101,7 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
     char department[MAX_DEPT];
     char phone[MAX_PHONE];
     char old_phone[MAX_PHONE];
+    char schedule[MAX_DESC];
 
     strncpy(name, doctor->name, MAX_NAME - 1);
     snprintf(age_str, sizeof(age_str), "%d", doctor->age);
@@ -2098,9 +2109,10 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
     strncpy(department, doctor->department, MAX_DEPT - 1);
     strncpy(phone, doctor->phone, MAX_PHONE - 1);
     strncpy(old_phone, doctor->phone, MAX_PHONE - 1);
+    strncpy(schedule, doctor->schedule, MAX_DESC - 1);
 
     int current_field = 0;
-    int field_count = 6;
+    int field_count = 7;
     int ch;
     int label_x = 3;
     int input_x = 15;
@@ -2114,9 +2126,10 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
         mvwprintw(form_win, 6, label_x, "性    别:");
         mvwprintw(form_win, 8, label_x, "科    室:");
         mvwprintw(form_win, 10, label_x, "电    话:");
+        mvwprintw(form_win, 12, label_x, "排    班:");
 
         int i;
-        for (i = 0; i < 5; i++) {
+        for (i = 0; i < 6; i++) {
             if (current_field == i) {
                 wattron(form_win, COLOR_PAIR(COLOR_PAIR_SELECT));
             }
@@ -2131,17 +2144,19 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                     break;
                 case 4: mvwprintw(form_win, 10, input_x, "[%-30s]", phone);
                     break;
+                case 5: mvwprintw(form_win, 12, input_x, "[%-30s]", schedule);
+                    break;
             }
             if (current_field == i) {
                 wattroff(form_win, COLOR_PAIR(COLOR_PAIR_SELECT));
             }
         }
 
-        if (current_field == 5) {
+        if (current_field == 6) {
             wattron(form_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
         }
-        mvwprintw(form_win, 13, 15, "  [ 保存修改 ]  ");
-        if (current_field == 5) {
+        mvwprintw(form_win, 15, 15, "  [ 保存修改 ]  ");
+        if (current_field == 6) {
             wattroff(form_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
         }
 
@@ -2159,7 +2174,7 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                 break;
             case '\n':
             case KEY_ENTER:
-                if (current_field < 5) {
+                if (current_field < 6) {
                     int row_y = 2 + current_field * 2;
                     char *target = NULL;
                     int max_len = 30;
@@ -2180,6 +2195,9 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                         case 4: target = phone;
                             max_len = MAX_PHONE - 1;
                             break;
+                        case 5: target = schedule;
+                            max_len = 30;
+                            break;
                     }
 
                     if (target != NULL) {
@@ -2190,7 +2208,7 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                     current_field++;
                 } else {
                     int age = atoi(age_str);
-                    DoctorNode newInfo = make_doctor(name, age, gender, department, phone);
+                    DoctorNode newInfo = make_doctor(name, age, gender, department, phone, schedule);
                     modify_doctor(g_doctors, old_phone, newInfo);
                     save_doctors(DATA_PATH_DOCTORS, g_doctors);
                     ui_show_message("成功", "医生信息修改成功", 1);
