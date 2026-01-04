@@ -139,7 +139,10 @@ DoctorNode *load_doctors(const char *filename) {
         char name[MAX_NAME], gender[MAX_GENDER], department[MAX_DEPT], phone[MAX_PHONE], schedule[MAX_DEPT];
         int age;
         
-        // 初始化schedule为空（兼容旧数据）
+        // 初始化schedule为空（向后兼容）
+        // 旧版本数据格式: name|age|gender|department|phone
+        // 新版本数据格式: name|age|gender|department|phone|schedule
+        // 如果文件中没有schedule字段，则使用空字符串
         memset(schedule, 0, sizeof(schedule));
 
         // 解析数据
