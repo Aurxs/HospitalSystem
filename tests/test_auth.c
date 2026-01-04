@@ -11,7 +11,7 @@ void test_make_user() {
     printf("测试 make_user 函数...\n");
     test_count_auth++;
 
-    AuthNode user = make_user("admin", "123456", 0);
+    AuthNode user = make_user("U001", "admin", "123456", 0);
     (void) user;
     assert(strcmp(user.username, "admin") == 0);
 
@@ -30,8 +30,8 @@ void test_add_find_user() {
     test_count_auth++;
 
     AuthNode *head = NULL;
-    AuthNode u1 = make_user("user1", "pass1", 1);
-    AuthNode u2 = make_user("user2", "pass2", 2);
+    AuthNode u1 = make_user("U001", "user1", "pass1", 1);
+    AuthNode u2 = make_user("U001", "user2", "pass2", 2);
 
     add_user(&head, u1);
     add_user(&head, u2);
@@ -68,7 +68,7 @@ void test_authenticate_user() {
     test_count_auth++;
 
     AuthNode *head = NULL;
-    AuthNode u1 = make_user("admin", "admin123", 0);
+    AuthNode u1 = make_user("U001", "admin", "admin123", 0);
     add_user(&head, u1);
 
     assert(authenticate_user(head, "admin", "admin123") == 1);
@@ -92,11 +92,11 @@ void test_modify_user() {
     test_count_auth++;
 
     AuthNode *head = NULL;
-    AuthNode u1 = make_user("user1", "oldpass", 1);
+    AuthNode u1 = make_user("U001", "user1", "oldpass", 1);
     add_user(&head, u1);
 
     // 修改密码
-    AuthNode newInfo = make_user("user1", "newpass", 1);
+    AuthNode newInfo = make_user("U001", "user1", "newpass", 1);
     AuthNode *modified = modify_user(head, "user1", newInfo);
     assert(modified != NULL);
 
@@ -125,9 +125,9 @@ void test_delete_user() {
     test_count_auth++;
 
     AuthNode *head = NULL;
-    AuthNode u1 = make_user("user1", "pass1", 1);
-    AuthNode u2 = make_user("user2", "pass2", 2);
-    AuthNode u3 = make_user("user3", "pass3", 1);
+    AuthNode u1 = make_user("U001", "user1", "pass1", 1);
+    AuthNode u2 = make_user("U001", "user2", "pass2", 2);
+    AuthNode u3 = make_user("U001", "user3", "pass3", 1);
 
     add_user(&head, u1);
     add_user(&head, u2);

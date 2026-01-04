@@ -5,12 +5,15 @@
 
 /**
  * 功能：构造一个费用记录
- * 参数：patientName - 患者姓名
+ * 参数：orderId - 费用记录唯一ID
+ *       patientId - 患者ID
+ *       patientName - 患者姓名
  *       itemName - 收费项目
  *       amount - 金额
  * 返回值：构造好的费用节点（按值返回）
  */
-BillNode make_bill(const char *patientName, const char *itemName, double amount);
+BillNode make_bill(const char *orderId, const char *patientId, const char *patientName, 
+                   const char *itemName, double amount);
 
 /**
  * 功能：添加一个新费用记录

@@ -16,7 +16,7 @@ void test_make_registration() {
     printf("测试 make_registration 函数...\n");
     test_count_registration++;
 
-    RegisterNode reg = make_registration("张三", "李医生", "内科", "2023-10-01");
+    RegisterNode reg = make_registration("R001", "P001", "张三", "李医生", "内科", "2023-10-01");
     (void) reg;
 
     assert(strcmp(reg.patientName, "张三") == 0);
@@ -36,14 +36,14 @@ void test_add_registration() {
     RegisterNode *head = NULL;
 
     // 添加第一个挂号记录
-    RegisterNode r1 = make_registration("李四", "王医生", "外科", "2023-10-02");
+    RegisterNode r1 = make_registration("R001", "P001", "李四", "王医生", "外科", "2023-10-02");
     RegisterNode *result1 = add_registration(&head, r1);
     assert(result1 != NULL);
     assert(head != NULL);
     assert(strcmp(head->patientName, "李四") == 0);
 
     // 添加第二个挂号记录
-    RegisterNode r2 = make_registration("王五", "张医生", "儿科", "2023-10-03");
+    RegisterNode r2 = make_registration("R001", "P001", "王五", "张医生", "儿科", "2023-10-03");
     RegisterNode *result2 = add_registration(&head, r2);
     assert(result2 != NULL);
     assert(head->next != NULL);
@@ -62,8 +62,8 @@ void test_findRegistration_patient() {
 
     RegisterNode *head = NULL;
 
-    RegisterNode r1 = make_registration("赵六", "孙医生", "心内科", "2023-10-04");
-    RegisterNode r2 = make_registration("孙七", "周医生", "妇产科", "2023-10-05");
+    RegisterNode r1 = make_registration("R001", "P001", "赵六", "孙医生", "心内科", "2023-10-04");
+    RegisterNode r2 = make_registration("R001", "P001", "孙七", "周医生", "妇产科", "2023-10-05");
     add_registration(&head, r1);
     add_registration(&head, r2);
 
@@ -90,8 +90,8 @@ void test_findRegistration_doctor() {
 
     RegisterNode *head = NULL;
 
-    RegisterNode r1 = make_registration("周八", "吴医生", "骨科", "2023-10-06");
-    RegisterNode r2 = make_registration("吴九", "郑医生", "眼科", "2023-10-07");
+    RegisterNode r1 = make_registration("R001", "P001", "周八", "吴医生", "骨科", "2023-10-06");
+    RegisterNode r2 = make_registration("R001", "P001", "吴九", "郑医生", "眼科", "2023-10-07");
     add_registration(&head, r1);
     add_registration(&head, r2);
 
@@ -118,8 +118,8 @@ void test_findRegistration_department() {
 
     RegisterNode *head = NULL;
 
-    RegisterNode r1 = make_registration("郑十", "冯医生", "神经科", "2023-10-08");
-    RegisterNode r2 = make_registration("冯一", "陈医生", "皮肤科", "2023-10-09");
+    RegisterNode r1 = make_registration("R001", "P001", "郑十", "冯医生", "神经科", "2023-10-08");
+    RegisterNode r2 = make_registration("R001", "P001", "冯一", "陈医生", "皮肤科", "2023-10-09");
     add_registration(&head, r1);
     add_registration(&head, r2);
 
@@ -146,8 +146,8 @@ void test_findRegistration_date() {
 
     RegisterNode *head = NULL;
 
-    RegisterNode r1 = make_registration("陈二", "褚医生", "泌尿科", "2023-10-10");
-    RegisterNode r2 = make_registration("褚三", "卫医生", "肿瘤科", "2023-10-11");
+    RegisterNode r1 = make_registration("R001", "P001", "陈二", "褚医生", "泌尿科", "2023-10-10");
+    RegisterNode r2 = make_registration("R001", "P001", "褚三", "卫医生", "肿瘤科", "2023-10-11");
     add_registration(&head, r1);
     add_registration(&head, r2);
 
@@ -174,9 +174,9 @@ void test_delete_registration() {
 
     RegisterNode *head = NULL;
 
-    RegisterNode r1 = make_registration("卫四", "蒋医生", "呼吸科", "2023-10-12");
-    RegisterNode r2 = make_registration("蒋五", "沈医生", "消化科", "2023-10-13");
-    RegisterNode r3 = make_registration("沈六", "韩医生", "内分泌科", "2023-10-14");
+    RegisterNode r1 = make_registration("R001", "P001", "卫四", "蒋医生", "呼吸科", "2023-10-12");
+    RegisterNode r2 = make_registration("R001", "P001", "蒋五", "沈医生", "消化科", "2023-10-13");
+    RegisterNode r3 = make_registration("R001", "P001", "沈六", "韩医生", "内分泌科", "2023-10-14");
     add_registration(&head, r1);
     add_registration(&head, r2);
     add_registration(&head, r3);

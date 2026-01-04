@@ -8,9 +8,12 @@
 #include "../include/bill.h"
 
 // 工具: 构造一个费用记录（按值返回，便于直接传给 add_bill）
-BillNode make_bill(const char *patientName, const char *itemName, double amount) {
+BillNode make_bill(const char *orderId, const char *patientId, const char *patientName, 
+                   const char *itemName, double amount) {
     BillNode b;
     memset(&b, 0, sizeof(b));
+    snprintf(b.oderId, sizeof(b.oderId), "%s", orderId);
+    snprintf(b.patientId, sizeof(b.patientId), "%s", patientId);
     snprintf(b.patientName, sizeof(b.patientName), "%s", patientName);
     snprintf(b.itemName, sizeof(b.itemName), "%s", itemName);
     b.amount = amount;
@@ -27,6 +30,8 @@ BillNode *add_bill(BillNode **head, const BillNode newInfo) {
     }
 
     // 将新数据填入临时结构体newNode
+    strcpy(newNode->oderId, newInfo.oderId);
+    strcpy(newNode->patientId, newInfo.patientId);
     strcpy(newNode->patientName, newInfo.patientName);
     strcpy(newNode->itemName, newInfo.itemName);
     newNode->amount = newInfo.amount;

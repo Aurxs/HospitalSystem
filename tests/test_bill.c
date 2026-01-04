@@ -17,7 +17,7 @@ void test_make_bill() {
     printf("测试 make_bill 函数...\n");
     test_count_bill++;
 
-    BillNode bill = make_bill("张三", "CT检查", 500.0);
+    BillNode bill = make_bill("B001", "P001", "张三", "CT检查", 500.0);
     (void) bill;
 
     assert(strcmp(bill.patientName, "张三") == 0);
@@ -36,14 +36,14 @@ void test_add_bill() {
     BillNode *head = NULL;
 
     // 添加第一个费用记录
-    BillNode b1 = make_bill("李四", "血常规", 50.0);
+    BillNode b1 = make_bill("B001", "P001", "李四", "血常规", 50.0);
     BillNode *result1 = add_bill(&head, b1);
     assert(result1 != NULL);
     assert(head != NULL);
     assert(strcmp(head->patientName, "李四") == 0);
 
     // 添加第二个费用记录
-    BillNode b2 = make_bill("王五", "X光检查", 200.0);
+    BillNode b2 = make_bill("B001", "P001", "王五", "X光检查", 200.0);
     BillNode *result2 = add_bill(&head, b2);
     assert(result2 != NULL);
     assert(head->next != NULL);
@@ -62,8 +62,8 @@ void test_findBill_patient() {
 
     BillNode *head = NULL;
 
-    BillNode b1 = make_bill("赵六", "挂号费", 15.0);
-    BillNode b2 = make_bill("孙七", "药费", 120.0);
+    BillNode b1 = make_bill("B001", "P001", "赵六", "挂号费", 15.0);
+    BillNode b2 = make_bill("B001", "P001", "孙七", "药费", 120.0);
     add_bill(&head, b1);
     add_bill(&head, b2);
 
@@ -90,8 +90,8 @@ void test_findBill_item() {
 
     BillNode *head = NULL;
 
-    BillNode b1 = make_bill("周八", "MRI检查", 800.0);
-    BillNode b2 = make_bill("吴九", "B超检查", 150.0);
+    BillNode b1 = make_bill("B001", "P001", "周八", "MRI检查", 800.0);
+    BillNode b2 = make_bill("B001", "P001", "吴九", "B超检查", 150.0);
     add_bill(&head, b1);
     add_bill(&head, b2);
 
@@ -119,10 +119,10 @@ void test_calculate_total_bill() {
     BillNode *head = NULL;
 
     // 为同一个患者添加多个费用记录
-    BillNode b1 = make_bill("郑十", "挂号费", 15.0);
-    BillNode b2 = make_bill("郑十", "检查费", 200.0);
-    BillNode b3 = make_bill("郑十", "药费", 85.0);
-    BillNode b4 = make_bill("冯一", "挂号费", 20.0);  // 其他患者
+    BillNode b1 = make_bill("B001", "P001", "郑十", "挂号费", 15.0);
+    BillNode b2 = make_bill("B001", "P001", "郑十", "检查费", 200.0);
+    BillNode b3 = make_bill("B001", "P001", "郑十", "药费", 85.0);
+    BillNode b4 = make_bill("B001", "P001", "冯一", "挂号费", 20.0);  // 其他患者
     add_bill(&head, b1);
     add_bill(&head, b2);
     add_bill(&head, b3);
@@ -153,11 +153,11 @@ void test_modify_bill() {
 
     BillNode *head = NULL;
 
-    BillNode b1 = make_bill("陈二", "手术费", 5000.0);
+    BillNode b1 = make_bill("B001", "P001", "陈二", "手术费", 5000.0);
     add_bill(&head, b1);
 
     // 修改费用记录
-    BillNode newInfo = make_bill("陈二", "手术费", 5500.0);
+    BillNode newInfo = make_bill("B001", "P001", "陈二", "手术费", 5500.0);
     BillNode *modified = modify_bill(head, "陈二", "手术费", newInfo);
 
     assert(modified != NULL);
@@ -165,7 +165,7 @@ void test_modify_bill() {
     assert(fabs(modified->amount - 5500.0) < 0.01);
 
     // 尝试修改不存在的费用记录
-    BillNode newInfo2 = make_bill("不存在", "不存在项目", 0);
+    BillNode newInfo2 = make_bill("B001", "P001", "不存在", "不存在项目", 0);
     BillNode *notModified = modify_bill(head, "不存在", "不存在项目", newInfo2);
     assert(notModified == NULL);
 
@@ -182,9 +182,9 @@ void test_delete_bill() {
 
     BillNode *head = NULL;
 
-    BillNode b1 = make_bill("褚三", "费用A", 100.0);
-    BillNode b2 = make_bill("卫四", "费用B", 200.0);
-    BillNode b3 = make_bill("蒋五", "费用C", 300.0);
+    BillNode b1 = make_bill("B001", "P001", "褚三", "费用A", 100.0);
+    BillNode b2 = make_bill("B001", "P001", "卫四", "费用B", 200.0);
+    BillNode b3 = make_bill("B001", "P001", "蒋五", "费用C", 300.0);
     add_bill(&head, b1);
     add_bill(&head, b2);
     add_bill(&head, b3);
@@ -216,9 +216,9 @@ void test_sort_bills_by_amount() {
     test_count_bill++;
 
     BillNode *head = NULL;
-    BillNode b1 = make_bill("A", "I", 300.0);
-    BillNode b2 = make_bill("B", "I", 100.0);
-    BillNode b3 = make_bill("C", "I", 200.0);
+    BillNode b1 = make_bill("B001", "P001", "A", "I", 300.0);
+    BillNode b2 = make_bill("B001", "P001", "B", "I", 100.0);
+    BillNode b3 = make_bill("B001", "P001", "C", "I", 200.0);
 
     add_bill(&head, b1);
     add_bill(&head, b2);

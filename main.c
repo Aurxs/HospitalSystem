@@ -65,8 +65,8 @@ int main() {
         } else if (role >= 0) {
             /* 根据角色分发到不同的界面 */
             if (role == ROLE_PATIENT) {
-                /* 患者使用独立的患者门户界面 */
-                ui_patient_portal_main(g_current_user->username);
+                /* 患者使用独立的患者门户界面，传入userId和用户名 */
+                ui_patient_portal_main(g_current_user->userId, g_current_user->username);
             } else {
                 /* 医生和管理员使用主界面 */
                 ui_main_screen(role);

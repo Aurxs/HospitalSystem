@@ -8,9 +8,10 @@
 #include "../include/doctor.h"
 
 // 工具: 构造一个医生记录
-DoctorNode make_doctor(const char *name, int age, const char *gender, const char *department, const char *phone, const char *schedule) {
+DoctorNode make_doctor(const char *userId, const char *name, int age, const char *gender, const char *department, const char *phone, const char *schedule) {
     DoctorNode p;
     memset(&p, 0, sizeof(p));
+    snprintf(p.userId, sizeof(p.userId), "%s", userId);
     snprintf(p.name, sizeof(p.name), "%s", name);
     p.age = age;
     snprintf(p.gender, sizeof(p.gender), "%s", gender);
@@ -30,6 +31,7 @@ DoctorNode *add_doctor(DoctorNode **head, const DoctorNode newInfo) {
     }
 
     //将新数据填入临时结构体newNode
+    strcpy(newNode->userId, newInfo.userId);
     strcpy(newNode->name, newInfo.name);
     newNode->age = newInfo.age;
     strcpy(newNode->gender, newInfo.gender);
@@ -78,7 +80,7 @@ DoctorNode *findDoctor_phone(DoctorNode *head, const char *phone) {
     return NULL; // 没有找到，返回 NULL
 }
 
-//修改医生信息
+//修改医生信息（userId不改变）
 DoctorNode *modify_doctor(DoctorNode *head, const char *phone, const DoctorNode newInfo) {
     DoctorNode *current = head;
     while (current != NULL) {

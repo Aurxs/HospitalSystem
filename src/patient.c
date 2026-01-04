@@ -5,10 +5,11 @@
 #include "../include/patient.h"
 
 // 工具: 构造一个患者记录（按值返回，便于直接传给 addPatient/modifyPatient）
-PatientNode make_patient(const char *name, int age, const char *gender,
+PatientNode make_patient(const char *userId, const char *name, int age, const char *gender,
                          const char *phone, const char *diagnosis, const char *treatment) {
     PatientNode p;
     memset(&p, 0, sizeof(p));
+    snprintf(p.userId, sizeof(p.userId), "%s", userId);
     snprintf(p.name, sizeof(p.name), "%s", name);
     p.age = age;
     snprintf(p.gender, sizeof(p.gender), "%s", gender);
@@ -28,6 +29,7 @@ PatientNode *add_patient(PatientNode **head, const PatientNode newInfo) {
     }
 
     //将新数据填入临时结构体newNode
+    strcpy(newNode->userId, newInfo.userId);
     strcpy(newNode->name, newInfo.name);
     newNode->age = newInfo.age;
     strcpy(newNode->gender, newInfo.gender);
@@ -81,7 +83,7 @@ PatientNode *modify_patient(PatientNode *head, const char *phone, const PatientN
     PatientNode *current = head;
     while (current != NULL) {
         if (strcmp(current->phone, phone) == 0) {
-            // 更新各个字段
+            // 更新各个字段（userId不改变）
             strcpy(current->name, newInfo.name);
             current->age = newInfo.age;
             strcpy(current->gender, newInfo.gender);

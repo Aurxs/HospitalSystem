@@ -16,7 +16,7 @@ void test_make_doctor() {
     printf("测试 make_doctor 函数...\n");
     test_count_doctor++;
 
-    DoctorNode doctor = make_doctor("李医生", 40, "男", "内科", "13800138001", "");
+    DoctorNode doctor = make_doctor("D001", "李医生", 40, "男", "内科", "13800138001", "");
     (void) doctor;
 
     assert(strcmp(doctor.name, "李医生") == 0);
@@ -37,14 +37,14 @@ void test_add_doctor() {
     DoctorNode *head = NULL;
 
     // 添加第一个医生
-    DoctorNode d1 = make_doctor("王医生", 35, "女", "外科", "13900139001", "");
+    DoctorNode d1 = make_doctor("D001", "王医生", 35, "女", "外科", "13900139001", "");
     DoctorNode *result1 = add_doctor(&head, d1);
     assert(result1 != NULL);
     assert(head != NULL);
     assert(strcmp(head->name, "王医生") == 0);
 
     // 添加第二个医生
-    DoctorNode d2 = make_doctor("张医生", 45, "男", "儿科", "13700137001", "");
+    DoctorNode d2 = make_doctor("D001", "张医生", 45, "男", "儿科", "13700137001", "");
     DoctorNode *result2 = add_doctor(&head, d2);
     assert(result2 != NULL);
     assert(head->next != NULL);
@@ -67,8 +67,8 @@ void test_findDoctor_name() {
 
     DoctorNode *head = NULL;
 
-    DoctorNode d1 = make_doctor("赵医生", 38, "男", "心内科", "13600136001", "");
-    DoctorNode d2 = make_doctor("孙医生", 32, "女", "妇产科", "13500135001", "");
+    DoctorNode d1 = make_doctor("D001", "赵医生", 38, "男", "心内科", "13600136001", "");
+    DoctorNode d2 = make_doctor("D001", "孙医生", 32, "女", "妇产科", "13500135001", "");
     add_doctor(&head, d1);
     add_doctor(&head, d2);
 
@@ -100,8 +100,8 @@ void test_findDoctor_phone() {
 
     DoctorNode *head = NULL;
 
-    DoctorNode d1 = make_doctor("周医生", 50, "男", "骨科", "13400134001", "");
-    DoctorNode d2 = make_doctor("吴医生", 29, "女", "眼科", "13300133001", "");
+    DoctorNode d1 = make_doctor("D001", "周医生", 50, "男", "骨科", "13400134001", "");
+    DoctorNode d2 = make_doctor("D001", "吴医生", 29, "女", "眼科", "13300133001", "");
     add_doctor(&head, d1);
     add_doctor(&head, d2);
 
@@ -133,11 +133,11 @@ void test_modify_doctor() {
 
     DoctorNode *head = NULL;
 
-    DoctorNode d1 = make_doctor("郑医生", 42, "男", "神经科", "13200132001", "");
+    DoctorNode d1 = make_doctor("D001", "郑医生", 42, "男", "神经科", "13200132001", "");
     add_doctor(&head, d1);
 
     // 修改医生信息
-    DoctorNode newInfo = make_doctor("郑医生", 43, "男", "神经外科", "13200132001", "");
+    DoctorNode newInfo = make_doctor("D001", "郑医生", 43, "男", "神经外科", "13200132001", "");
     DoctorNode *modified = modify_doctor(head, "13200132001", newInfo);
 
     assert(modified != NULL);
@@ -146,7 +146,7 @@ void test_modify_doctor() {
     assert(strcmp(modified->department, "神经外科") == 0);
 
     // 尝试修改不存在的医生
-    DoctorNode newInfo2 = make_doctor("test", 30, "男", "测试科", "99999999999", "");
+    DoctorNode newInfo2 = make_doctor("D001", "test", 30, "男", "测试科", "99999999999", "");
     DoctorNode *notModified = modify_doctor(head, "99999999999", newInfo2);
     assert(notModified == NULL);
 
@@ -167,9 +167,9 @@ void test_delete_doctor() {
 
     DoctorNode *head = NULL;
 
-    DoctorNode d1 = make_doctor("冯医生", 36, "女", "皮肤科", "13100131001", "");
-    DoctorNode d2 = make_doctor("陈医生", 44, "男", "泌尿科", "13000130001", "");
-    DoctorNode d3 = make_doctor("褚医生", 52, "女", "肿瘤科", "12900129001", "");
+    DoctorNode d1 = make_doctor("D001", "冯医生", 36, "女", "皮肤科", "13100131001", "");
+    DoctorNode d2 = make_doctor("D001", "陈医生", 44, "男", "泌尿科", "13000130001", "");
+    DoctorNode d3 = make_doctor("D001", "褚医生", 52, "女", "肿瘤科", "12900129001", "");
     add_doctor(&head, d1);
     add_doctor(&head, d2);
     add_doctor(&head, d3);
@@ -205,9 +205,9 @@ void test_sort_doctors_by_name() {
     test_count_doctor++;
 
     DoctorNode *head = NULL;
-    DoctorNode d1 = make_doctor("C", 30, "M", "D", "139", "");
-    DoctorNode d2 = make_doctor("A", 31, "M", "D", "138", "");
-    DoctorNode d3 = make_doctor("B", 32, "M", "D", "137", "");
+    DoctorNode d1 = make_doctor("D001", "C", 30, "M", "D", "139", "");
+    DoctorNode d2 = make_doctor("D001", "A", 31, "M", "D", "138", "");
+    DoctorNode d3 = make_doctor("D001", "B", 32, "M", "D", "137", "");
 
     add_doctor(&head, d1);
     add_doctor(&head, d2);
@@ -235,9 +235,9 @@ void test_sort_doctors_by_phone() {
     test_count_doctor++;
 
     DoctorNode *head = NULL;
-    DoctorNode d1 = make_doctor("A", 30, "M", "D", "139", "");
-    DoctorNode d2 = make_doctor("B", 31, "M", "D", "137", "");
-    DoctorNode d3 = make_doctor("C", 32, "M", "D", "138", "");
+    DoctorNode d1 = make_doctor("D001", "A", 30, "M", "D", "139", "");
+    DoctorNode d2 = make_doctor("D001", "B", 31, "M", "D", "137", "");
+    DoctorNode d3 = make_doctor("D001", "C", 32, "M", "D", "138", "");
 
     add_doctor(&head, d1);
     add_doctor(&head, d2);
@@ -265,9 +265,9 @@ void test_sort_doctors_by_age() {
     test_count_doctor++;
 
     DoctorNode *head = NULL;
-    DoctorNode d1 = make_doctor("A", 32, "M", "D", "139", "");
-    DoctorNode d2 = make_doctor("B", 30, "M", "D", "138", "");
-    DoctorNode d3 = make_doctor("C", 31, "M", "D", "137", "");
+    DoctorNode d1 = make_doctor("D001", "A", 32, "M", "D", "139", "");
+    DoctorNode d2 = make_doctor("D001", "B", 30, "M", "D", "138", "");
+    DoctorNode d3 = make_doctor("D001", "C", 31, "M", "D", "137", "");
 
     add_doctor(&head, d1);
     add_doctor(&head, d2);

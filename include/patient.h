@@ -5,7 +5,8 @@
 
 /**
  * 功能：构造一个患者记录
- * 参数：name - 患者姓名
+ * 参数：userId - 用户唯一ID
+ *       name - 患者姓名
  *       age - 患者年龄
  *       gender - 患者性别
  *       phone - 患者电话号码
@@ -13,7 +14,7 @@
  *       treatment - 治疗方案
  * 返回值：构造好的患者节点（按值返回）
 */
-PatientNode make_patient(const char *name, int age, const char *gender,
+PatientNode make_patient(const char *userId, const char *name, int age, const char *gender,
                          const char *phone, const char *diagnosis, const char *treatment);
 
 /**

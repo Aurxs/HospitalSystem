@@ -16,7 +16,7 @@ void test_make_patient() {
     printf("测试 make_patient 函数...\n");
     test_count_patient++;
 
-    PatientNode patient = make_patient("张三", 30, "男", "13800138000", "感冒", "多休息");
+    PatientNode patient = make_patient("P001", "张三", 30, "男", "13800138000", "感冒", "多休息");
     (void) patient; // Suppress unused variable warning in Release builds
 
     assert(strcmp(patient.name, "张三") == 0);
@@ -38,14 +38,14 @@ void test_add_patient() {
     PatientNode *head = NULL;
 
     // 添加第一个患者
-    PatientNode p1 = make_patient("李四", 25, "女", "13900139000", "发烧", "退烧药");
+    PatientNode p1 = make_patient("P001", "李四", 25, "女", "13900139000", "发烧", "退烧药");
     PatientNode *result1 = add_patient(&head, p1);
     assert(result1 != NULL);
     assert(head != NULL);
     assert(strcmp(head->name, "李四") == 0);
 
     // 添加第二个患者
-    PatientNode p2 = make_patient("王五", 35, "男", "13700137000", "咳嗽", "止咳糖浆");
+    PatientNode p2 = make_patient("P001", "王五", 35, "男", "13700137000", "咳嗽", "止咳糖浆");
     PatientNode *result2 = add_patient(&head, p2);
     assert(result2 != NULL);
     assert(head->next != NULL);
@@ -68,8 +68,8 @@ void test_findPatient_name() {
 
     PatientNode *head = NULL;
 
-    PatientNode p1 = make_patient("赵六", 40, "男", "13600136000", "头痛", "止痛药");
-    PatientNode p2 = make_patient("孙七", 28, "女", "13500135000", "胃痛", "胃药");
+    PatientNode p1 = make_patient("P001", "赵六", 40, "男", "13600136000", "头痛", "止痛药");
+    PatientNode p2 = make_patient("P001", "孙七", 28, "女", "13500135000", "胃痛", "胃药");
     add_patient(&head, p1);
     add_patient(&head, p2);
 
@@ -100,8 +100,8 @@ void test_findPatient_phone() {
 
     PatientNode *head = NULL;
 
-    PatientNode p1 = make_patient("周八", 50, "男", "13400134000", "高血压", "降压药");
-    PatientNode p2 = make_patient("吴九", 22, "女", "13300133000", "过敏", "抗过敏药");
+    PatientNode p1 = make_patient("P001", "周八", 50, "男", "13400134000", "高血压", "降压药");
+    PatientNode p2 = make_patient("P001", "吴九", 22, "女", "13300133000", "过敏", "抗过敏药");
     add_patient(&head, p1);
     add_patient(&head, p2);
 
@@ -132,11 +132,11 @@ void test_modify_patient() {
 
     PatientNode *head = NULL;
 
-    PatientNode p1 = make_patient("郑十", 45, "男", "13200132000", "糖尿病", "控制饮食");
+    PatientNode p1 = make_patient("P001", "郑十", 45, "男", "13200132000", "糖尿病", "控制饮食");
     add_patient(&head, p1);
 
     // 修改患者信息
-    PatientNode newInfo = make_patient("郑十一", 46, "男", "13200132000", "糖尿病稳定", "继续控制饮食");
+    PatientNode newInfo = make_patient("P001", "郑十一", 46, "男", "13200132000", "糖尿病稳定", "继续控制饮食");
     PatientNode *modified = modify_patient(head, "13200132000", newInfo);
 
     assert(modified != NULL);
@@ -145,7 +145,7 @@ void test_modify_patient() {
     assert(strcmp(modified->diagnosis, "糖尿病稳定") == 0);
 
     // 尝试修改不存在的患者
-    PatientNode newInfo2 = make_patient("test", 30, "男", "99999999999", "test", "test");
+    PatientNode newInfo2 = make_patient("P001", "test", 30, "男", "99999999999", "test", "test");
     PatientNode *notModified = modify_patient(head, "99999999999", newInfo2);
     assert(notModified == NULL);
 
@@ -166,9 +166,9 @@ void test_delete_patient() {
 
     PatientNode *head = NULL;
 
-    PatientNode p1 = make_patient("冯一", 33, "女", "13100131000", "骨折", "打石膏");
-    PatientNode p2 = make_patient("陈二", 27, "男", "13000130000", "扭伤", "冰敷");
-    PatientNode p3 = make_patient("褚三", 55, "女", "12900129000", "心脏病", "药物治疗");
+    PatientNode p1 = make_patient("P001", "冯一", 33, "女", "13100131000", "骨折", "打石膏");
+    PatientNode p2 = make_patient("P001", "陈二", 27, "男", "13000130000", "扭伤", "冰敷");
+    PatientNode p3 = make_patient("P001", "褚三", 55, "女", "12900129000", "心脏病", "药物治疗");
     add_patient(&head, p1);
     add_patient(&head, p2);
     add_patient(&head, p3);
@@ -204,9 +204,9 @@ void test_sort_patients_by_phone() {
     test_count_patient++;
 
     PatientNode *head = NULL;
-    PatientNode p1 = make_patient("A", 20, "M", "139", "D", "T");
-    PatientNode p2 = make_patient("B", 21, "M", "138", "D", "T");
-    PatientNode p3 = make_patient("C", 22, "M", "137", "D", "T");
+    PatientNode p1 = make_patient("P001", "A", 20, "M", "139", "D", "T");
+    PatientNode p2 = make_patient("P001", "B", 21, "M", "138", "D", "T");
+    PatientNode p3 = make_patient("P001", "C", 22, "M", "137", "D", "T");
 
     add_patient(&head, p1);
     add_patient(&head, p2);
@@ -234,9 +234,9 @@ void test_sort_patients_by_age() {
     test_count_patient++;
 
     PatientNode *head = NULL;
-    PatientNode p1 = make_patient("A", 30, "M", "139", "D", "T");
-    PatientNode p2 = make_patient("B", 20, "M", "138", "D", "T");
-    PatientNode p3 = make_patient("C", 25, "M", "137", "D", "T");
+    PatientNode p1 = make_patient("P001", "A", 30, "M", "139", "D", "T");
+    PatientNode p2 = make_patient("P001", "B", 20, "M", "138", "D", "T");
+    PatientNode p3 = make_patient("P001", "C", 25, "M", "137", "D", "T");
 
     add_patient(&head, p1);
     add_patient(&head, p2);

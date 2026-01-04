@@ -5,6 +5,7 @@
  * 描述: 患者门户界面实现文件
  *       本文件实现了患者专属界面的所有功能
  *       患者只能进行挂号和查询自己的费用记录
+ *       使用 userId 进行数据匹配
  * ============================================================================
  */
 
@@ -28,10 +29,20 @@
 extern RegisterNode *g_registrations;
 extern BillNode *g_bills;
 extern DoctorNode *g_doctors;
+extern PatientNode *g_patients;
 extern AuthNode *g_current_user;
 
 /* 外部文件路径引用 - 通过函数获取 */
 extern void save_registrations_data(void);
+
+/* 生成唯一订单ID的辅助函数 */
+static void generate_order_id(char *buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    snprintf(buffer, size, "R%04d%02d%02d%02d%02d%02d",
+             tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday,
+             tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);
+}
 
 /*
  * ============================================================================
@@ -75,7 +86,7 @@ void ui_patient_portal_draw_sidebar(WINDOW *win, int selected) {
  * 功能: 显示医生列表，支持按科室筛选，选择医生进行挂号
  * ============================================================================
  */
-int ui_patient_register_form(WINDOW *parent_win, const char *patient_name) {
+int ui_patient_register_form(WINDOW *parent_win, const char *userId, const char *patient_name) {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
@@ -224,15 +235,18 @@ int ui_patient_register_form(WINDOW *parent_win, const char *patient_name) {
                              selected_doctor->name, selected_doctor->department);
                     
                     if (ui_confirm_dialog("确认挂号", confirm_msg)) {
-                        /* 生成今天的日期 */
+                        /* 生成今天的日期和订单ID */
                         time_t now = time(NULL);
                         struct tm *tm_info = localtime(&now);
                         char date[MAX_NAME];
+                        char orderId[MAX_ID];
                         snprintf(date, sizeof(date), "%04d-%02d-%02d", 
                                  tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday);
+                        generate_order_id(orderId, sizeof(orderId));
 
                         /* 添加挂号记录 */
-                        RegisterNode r = make_registration(patient_name, selected_doctor->name, 
+                        RegisterNode r = make_registration(orderId, userId, patient_name,
+                                                           selected_doctor->name, 
                                                            selected_doctor->department, date);
                         add_registration(&g_registrations, r);
                         save_registrations_data();
@@ -257,10 +271,10 @@ int ui_patient_register_form(WINDOW *parent_win, const char *patient_name) {
 /*
  * ============================================================================
  * 患者费用查询界面
- * 功能: 只显示当前患者自己的费用记录
+ * 功能: 只显示当前患者自己的费用记录（按patientId匹配）
  * ============================================================================
  */
-void ui_patient_query_bills(WINDOW *content_win, const char *patient_name) {
+void ui_patient_query_bills(WINDOW *content_win, const char *userId) {
     int max_y, max_x;
     getmaxyx(content_win, max_y, max_x);
 
@@ -286,11 +300,11 @@ void ui_patient_query_bills(WINDOW *content_win, const char *patient_name) {
         }
         wattroff(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
 
-        /* 计算该患者的记录数量 */
+        /* 计算该患者的记录数量（按patientId匹配） */
         BillNode *cur = g_bills;
         int total_count = 0;
         while (cur != NULL) {
-            if (strcmp(cur->patientName, patient_name) == 0) {
+            if (strcmp(cur->patientId, userId) == 0) {
                 total_count++;
             }
             cur = cur->next;
@@ -305,7 +319,7 @@ void ui_patient_query_bills(WINDOW *content_win, const char *patient_name) {
         /* 跳过不属于当前患者的记录和分页 */
         int patient_idx = 0;
         while (cur != NULL) {
-            if (strcmp(cur->patientName, patient_name) == 0) {
+            if (strcmp(cur->patientId, userId) == 0) {
                 if (patient_idx >= start_index && row_y < max_y - 4) {
                     x = 1;
                     if (display_row == selected_row)
@@ -361,10 +375,10 @@ void ui_patient_query_bills(WINDOW *content_win, const char *patient_name) {
 /*
  * ============================================================================
  * 患者查看挂号记录
- * 功能: 只显示当前患者自己的挂号记录
+ * 功能: 只显示当前患者自己的挂号记录（按patientId匹配）
  * ============================================================================
  */
-void ui_patient_view_registrations(WINDOW *content_win, const char *patient_name) {
+void ui_patient_view_registrations(WINDOW *content_win, const char *userId) {
     int max_y, max_x;
     getmaxyx(content_win, max_y, max_x);
 
@@ -390,11 +404,11 @@ void ui_patient_view_registrations(WINDOW *content_win, const char *patient_name
         }
         wattroff(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
 
-        /* 计算该患者的记录数量 */
+        /* 计算该患者的记录数量（按patientId匹配） */
         RegisterNode *cur = g_registrations;
         int total_count = 0;
         while (cur != NULL) {
-            if (strcmp(cur->patientName, patient_name) == 0) {
+            if (strcmp(cur->patientId, userId) == 0) {
                 total_count++;
             }
             cur = cur->next;
@@ -407,7 +421,7 @@ void ui_patient_view_registrations(WINDOW *content_win, const char *patient_name
         int patient_idx = 0;
 
         while (cur != NULL) {
-            if (strcmp(cur->patientName, patient_name) == 0) {
+            if (strcmp(cur->patientId, userId) == 0) {
                 if (patient_idx >= start_index && row_y < max_y - 3) {
                     x = 1;
                     if (display_row == selected_row)
@@ -462,11 +476,27 @@ void ui_patient_view_registrations(WINDOW *content_win, const char *patient_name
 
 /*
  * ============================================================================
+ * 查找患者真实姓名（根据userId）
+ * ============================================================================
+ */
+static const char* find_patient_real_name(const char *userId) {
+    PatientNode *cur = g_patients;
+    while (cur != NULL) {
+        if (strcmp(cur->userId, userId) == 0) {
+            return cur->name;
+        }
+        cur = cur->next;
+    }
+    return userId;  /* 如果找不到，返回userId */
+}
+
+/*
+ * ============================================================================
  * 患者门户主界面
  * 功能: 显示患者专属界面，只包含挂号和费用查询功能
  * ============================================================================
  */
-void ui_patient_portal_main(const char *patient_name) {
+void ui_patient_portal_main(const char *userId, const char *patient_name) {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
@@ -477,6 +507,9 @@ void ui_patient_portal_main(const char *patient_name) {
 
     keypad(sidebar_win, TRUE);
     keypad(content_win, TRUE);
+
+    /* 获取患者的真实姓名用于显示 */
+    const char *real_name = find_patient_real_name(userId);
 
     int selected = 0;
     int ch;
@@ -499,7 +532,7 @@ void ui_patient_portal_main(const char *patient_name) {
         /* 绘制内容区域 */
         werase(content_win);
         ui_draw_box(content_win, "欢迎使用患者服务平台");
-        mvwprintw(content_win, 3, 3, "尊敬的 %s，欢迎您！", patient_name);
+        mvwprintw(content_win, 3, 3, "尊敬的 %s，欢迎您！", real_name);
         mvwprintw(content_win, 5, 3, "您可以进行以下操作:");
         mvwprintw(content_win, 7, 5, "• 我要挂号 - 查看医生列表，选择医生预约挂号");
         mvwprintw(content_win, 8, 5, "• 我的挂号 - 查看您已预约的挂号记录");
@@ -527,13 +560,13 @@ void ui_patient_portal_main(const char *patient_name) {
             case KEY_ENTER:
                 switch (selected) {
                     case PATIENT_MENU_REGISTER:
-                        ui_patient_register_form(content_win, patient_name);
+                        ui_patient_register_form(content_win, userId, real_name);
                         break;
                     case PATIENT_MENU_MY_REGISTER:
-                        ui_patient_view_registrations(content_win, patient_name);
+                        ui_patient_view_registrations(content_win, userId);
                         break;
                     case PATIENT_MENU_QUERY_BILL:
-                        ui_patient_query_bills(content_win, patient_name);
+                        ui_patient_query_bills(content_win, userId);
                         break;
                     case PATIENT_MENU_LOGOUT:
                         running = 0;

@@ -40,10 +40,11 @@
  * 功能: 患者门户主界面
  * 说明: 显示患者专属界面，只包含挂号和费用查询功能
  * 参数:
- *   - patient_name: 当前登录患者的用户名
+ *   - userId: 当前登录患者的唯一ID
+ *   - patient_name: 当前登录患者的姓名
  * 返回值: 无
  */
-void ui_patient_portal_main(const char *patient_name);
+void ui_patient_portal_main(const char *userId, const char *patient_name);
 
 /**
  * 函数名: ui_patient_portal_draw_sidebar
@@ -60,29 +61,30 @@ void ui_patient_portal_draw_sidebar(WINDOW *win, int selected);
  * 说明: 让患者选择医生和科室进行挂号，患者姓名自动填入
  * 参数:
  *   - parent_win: 父窗口
+ *   - userId: 当前登录患者的唯一ID
  *   - patient_name: 当前登录的患者姓名
  * 返回值: 0-成功, -1-取消或失败
  */
-int ui_patient_register_form(WINDOW *parent_win, const char *patient_name);
+int ui_patient_register_form(WINDOW *parent_win, const char *userId, const char *patient_name);
 
 /**
  * 函数名: ui_patient_query_bills
  * 功能: 患者费用查询界面
- * 说明: 只显示当前患者自己的费用记录
+ * 说明: 只显示当前患者自己的费用记录（按patientId匹配）
  * 参数:
  *   - content_win: 内容区域窗口
- *   - patient_name: 当前登录的患者姓名
+ *   - userId: 当前登录患者的唯一ID
  */
-void ui_patient_query_bills(WINDOW *content_win, const char *patient_name);
+void ui_patient_query_bills(WINDOW *content_win, const char *userId);
 
 /**
  * 函数名: ui_patient_view_registrations
  * 功能: 患者查看挂号记录
- * 说明: 只显示当前患者自己的挂号记录
+ * 说明: 只显示当前患者自己的挂号记录（按patientId匹配）
  * 参数:
  *   - content_win: 内容区域窗口
- *   - patient_name: 当前登录的患者姓名
+ *   - userId: 当前登录患者的唯一ID
  */
-void ui_patient_view_registrations(WINDOW *content_win, const char *patient_name);
+void ui_patient_view_registrations(WINDOW *content_win, const char *userId);
 
 #endif // PATIENT_PORTAL_H

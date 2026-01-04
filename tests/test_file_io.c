@@ -32,8 +32,8 @@ void test_save_load_patients() {
 
     // 创建患者链表
     PatientNode *head = NULL;
-    PatientNode p1 = make_patient("张三", 30, "男", "13800138000", "感冒", "多休息");
-    PatientNode p2 = make_patient("李四", 25, "女", "13900139000", "发烧", "退烧药");
+    PatientNode p1 = make_patient("P001", "张三", 30, "男", "13800138000", "感冒", "多休息");
+    PatientNode p2 = make_patient("P001", "李四", 25, "女", "13900139000", "发烧", "退烧药");
     add_patient(&head, p1);
     add_patient(&head, p2);
 
@@ -80,8 +80,8 @@ void test_save_load_doctors() {
 
     // 创建医生链表
     DoctorNode *head = NULL;
-    DoctorNode d1 = make_doctor("王医生", 40, "男", "内科", "13800138001", "");
-    DoctorNode d2 = make_doctor("张医生", 35, "女", "外科", "13900139001", "");
+    DoctorNode d1 = make_doctor("D001", "王医生", 40, "男", "内科", "13800138001", "");
+    DoctorNode d2 = make_doctor("D001", "张医生", 35, "女", "外科", "13900139001", "");
     add_doctor(&head, d1);
     add_doctor(&head, d2);
 
@@ -174,8 +174,8 @@ void test_save_load_registrations() {
 
     // 创建挂号记录链表
     RegisterNode *head = NULL;
-    RegisterNode r1 = make_registration("张三", "王医生", "内科", "2023-10-01");
-    RegisterNode r2 = make_registration("李四", "张医生", "外科", "2023-10-02");
+    RegisterNode r1 = make_registration("R001", "P001", "张三", "王医生", "内科", "2023-10-01");
+    RegisterNode r2 = make_registration("R001", "P001", "李四", "张医生", "外科", "2023-10-02");
     add_registration(&head, r1);
     add_registration(&head, r2);
 
@@ -214,9 +214,9 @@ void test_save_load_bills() {
 
     // 创建费用记录链表
     BillNode *head = NULL;
-    BillNode b1 = make_bill("张三", "挂号费", 15.0);
-    BillNode b2 = make_bill("张三", "检查费", 200.0);
-    BillNode b3 = make_bill("李四", "药费", 85.0);
+    BillNode b1 = make_bill("B001", "P001", "张三", "挂号费", 15.0);
+    BillNode b2 = make_bill("B001", "P001", "张三", "检查费", 200.0);
+    BillNode b3 = make_bill("B001", "P001", "李四", "药费", 85.0);
     add_bill(&head, b1);
     add_bill(&head, b2);
     add_bill(&head, b3);
@@ -281,8 +281,8 @@ void test_save_load_users() {
 
     // 创建用户链表
     AuthNode *head = NULL;
-    AuthNode u1 = make_user("admin", "admin123", 0);
-    AuthNode u2 = make_user("guest", "guest123", 2);
+    AuthNode u1 = make_user("U001", "admin", "admin123", 0);
+    AuthNode u2 = make_user("U002", "guest", "guest123", 2);
     add_user(&head, u1);
     add_user(&head, u2);
 

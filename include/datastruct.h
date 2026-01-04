@@ -10,10 +10,12 @@
 #define MAX_PHONE 20
 #define MAX_DESC 200     // 诊断详情、治疗方案等长文本
 #define MAX_DEPT 50      // 科室名称长度
+#define MAX_ID 20        // 用户唯一ID长度
 
 
 // 1. 患者信息节点 (Patient)
 typedef struct PatientNode {
+    char userId[MAX_ID];         // 用户唯一ID（与auth.txt关联）
     char name[MAX_NAME];         // 姓名
     int age;                     // 年龄
     char gender[MAX_GENDER];     // 性别
@@ -26,6 +28,7 @@ typedef struct PatientNode {
 
 // 2. 医生信息节点 (Doctor)
 typedef struct DoctorNode {
+    char userId[MAX_ID];         // 用户唯一ID（与auth.txt关联）
     char name[MAX_NAME];
     int age;
     char gender[MAX_GENDER];
@@ -50,7 +53,9 @@ typedef struct DrugNode {
 // 4. 挂号记录节点 (Registration)
 // 这个结构体用来连接患者和医生
 typedef struct RegisterNode {
-    char patientName[MAX_NAME];  // 挂号的患者
+    char oderId[MAX_ID];          // 挂号记录唯一ID
+    char patientId[MAX_ID];      // 患者ID（与auth.txt关联）
+    char patientName[MAX_NAME];  // 挂号的患者（冗余存储方便显示）
     char doctorName[MAX_NAME];   // 挂号的医生
     char department[MAX_DEPT];   // 挂号科室
     char date[MAX_NAME];         // 日期 (格式如 2023-10-01)
@@ -60,7 +65,9 @@ typedef struct RegisterNode {
 
 // 5. 费用记录节点 (Bill)
 typedef struct BillNode {
-    char patientName[MAX_NAME];  // 谁的费用
+    char oderId[MAX_ID];          // 费用记录唯一ID
+    char patientId[MAX_ID];      // 患者ID（与auth.txt关联）
+    char patientName[MAX_NAME];  // 谁的费用（冗余存储方便显示）
     char itemName[MAX_NAME];     // 收费项目 (如：阿莫西林、CT检查)
     double amount;               // 金额
     
@@ -69,7 +76,8 @@ typedef struct BillNode {
 
 // 6. 登录信息节点 (Auth)
 typedef struct AuthNode {
-    char username[MAX_NAME];    // 用户名
+    char userId[MAX_ID];        // 用户唯一ID（关联其他表）
+    char username[MAX_NAME];    // 用户名（英文登录名）
     char password[MAX_NAME];    // 密码 (加密存储)
     int role;                   // 权限角色: 0-管理员, 1-医生, 2-患者
 

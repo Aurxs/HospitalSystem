@@ -17,11 +17,14 @@ void cipher(const char *input, char *output) {
     output[i] = '\0';
 }
 
-AuthNode make_user(const char *username, const char *password, int role) {
+AuthNode make_user(const char *userId, const char *username, const char *password, int role) {
     AuthNode node;
     // 初始化内存
     memset(&node, 0, sizeof(AuthNode));
 
+    // 复制用户ID
+    strncpy(node.userId, userId, MAX_ID - 1);
+    
     // 复制用户名
     strncpy(node.username, username, MAX_NAME - 1);
 

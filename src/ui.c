@@ -53,6 +53,7 @@
 #include <ctype.h>      /* 字符处理函数 */
 #include <sys/stat.h>   /* mkdir函数 */
 #include <errno.h>      /* errno */
+#include <time.h>       /* 时间函数 */
 
 #ifdef _WIN32
 #include <windows.h>
@@ -97,6 +98,16 @@ static char DATA_PATH_DRUGS[1024] = ""; /* 药品数据文件路径 */
 static char DATA_PATH_REGISTRATIONS[1024] = ""; /* 挂号数据文件路径 */
 static char DATA_PATH_BILLS[1024] = ""; /* 费用数据文件路径 */
 static char DATA_PATH_USERS[1024] = ""; /* 用户数据文件路径 */
+
+/* ID生成计数器 */
+static int g_id_counter = 0;
+
+/* 生成唯一ID的辅助函数 */
+static void generate_unique_id(char *buffer, size_t size, const char *prefix) {
+    time_t now = time(NULL);
+    g_id_counter++;
+    snprintf(buffer, size, "%s%ld%04d", prefix, (long)now, g_id_counter % 10000);
+}
 
 /*
  * ============================================================================
@@ -435,7 +446,7 @@ int ui_init(void) {
 
     /* 如果没有任何用户，创建默认管理员账户（用户名和密码都是admin） */
     if (g_users == NULL) {
-        AuthNode admin = make_user("admin", "admin", ROLE_ADMIN);
+        AuthNode admin = make_user("admin", "admin", "admin", ROLE_ADMIN);
         add_user(&g_users, admin);
         save_users(DATA_PATH_USERS, g_users);
     }
@@ -1445,7 +1456,9 @@ int ui_add_patient_form(WINDOW *parent_win) {
                         ui_show_message("错误", "姓名和电话为必填项", 2);
                     } else {
                         int age = atoi(age_str);
-                        PatientNode p = make_patient(name, age, gender, phone, diagnosis, treatment);
+                        char userId[MAX_ID];
+                        generate_unique_id(userId, sizeof(userId), "P");
+                        PatientNode p = make_patient(userId, name, age, gender, phone, diagnosis, treatment);
                         add_patient(&g_patients, p);
                         save_patients(DATA_PATH_PATIENTS, g_patients);
                         ui_show_message("成功", "患者信息添加成功", 1);
@@ -1597,7 +1610,8 @@ int ui_modify_patient_form(WINDOW *parent_win, PatientNode *patient) {
                     if (current_field > 6) current_field = 6;
                 } else {
                     int age = atoi(age_str);
-                    PatientNode newInfo = make_patient(name, age, gender, phone, diagnosis, treatment);
+                    /* 修改时保留原来的userId */
+                    PatientNode newInfo = make_patient(patient->userId, name, age, gender, phone, diagnosis, treatment);
                     modify_patient(g_patients, old_phone, newInfo);
                     save_patients(DATA_PATH_PATIENTS, g_patients);
                     ui_show_message("成功", "患者信息修改成功", 1);
@@ -2073,7 +2087,9 @@ int ui_add_doctor_form(WINDOW *parent_win) {
                         ui_show_message("错误", "姓名和电话为必填项", 2);
                     } else {
                         int age = atoi(age_str);
-                        DoctorNode d = make_doctor(name, age, gender, department, phone, schedule);
+                        char userId[MAX_ID];
+                        generate_unique_id(userId, sizeof(userId), "D");
+                        DoctorNode d = make_doctor(userId, name, age, gender, department, phone, schedule);
                         add_doctor(&g_doctors, d);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
                         ui_show_message("成功", "医生信息添加成功", 1);
@@ -2216,7 +2232,8 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                     current_field++;
                 } else {
                     int age = atoi(age_str);
-                    DoctorNode newInfo = make_doctor(name, age, gender, department, phone, schedule);
+                    /* 修改时保留原来的userId */
+                    DoctorNode newInfo = make_doctor(doctor->userId, name, age, gender, department, phone, schedule);
                     modify_doctor(g_doctors, old_phone, newInfo);
                     save_doctors(DATA_PATH_DOCTORS, g_doctors);
                     ui_show_message("成功", "医生信息修改成功", 1);
@@ -2997,7 +3014,16 @@ int ui_add_registration_form(WINDOW *parent_win) {
                 } else {
                     if (strlen(patientName) == 0 || strlen(doctorName) ==
                         0) { ui_show_message("错误", "患者和医生姓名必填", 2); } else {
-                        RegisterNode r = make_registration(patientName, doctorName, department, date);
+                        char orderId[MAX_ID], patientId[MAX_ID];
+                        generate_unique_id(orderId, sizeof(orderId), "R");
+                        /* 尝试通过患者姓名找到患者ID */
+                        PatientNode *pat = findPatient_name(g_patients, patientName);
+                        if (pat) {
+                            strncpy(patientId, pat->userId, MAX_ID - 1);
+                        } else {
+                            strncpy(patientId, "UNKNOWN", MAX_ID - 1);
+                        }
+                        RegisterNode r = make_registration(orderId, patientId, patientName, doctorName, department, date);
                         add_registration(&g_registrations, r);
                         save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
                         ui_show_message("成功", "挂号成功", 1);
@@ -3193,7 +3219,15 @@ int ui_add_bill_form(WINDOW *parent_win) {
                     if (strlen(pn) == 0) ui_show_message("错误", "患者姓名必填", 2);
                     else {
                         double a = atof(amt);
-                        BillNode b = make_bill(pn, item, a);
+                        char orderId[MAX_ID], patientId[MAX_ID];
+                        generate_unique_id(orderId, sizeof(orderId), "B");
+                        PatientNode *pat = findPatient_name(g_patients, pn);
+                        if (pat) {
+                            strncpy(patientId, pat->userId, MAX_ID - 1);
+                        } else {
+                            strncpy(patientId, "UNKNOWN", MAX_ID - 1);
+                        }
+                        BillNode b = make_bill(orderId, patientId, pn, item, a);
                         add_bill(&g_bills, b);
                         save_bills(DATA_PATH_BILLS, g_bills);
                         ui_show_message("成功", "费用添加成功", 1);
@@ -3276,7 +3310,8 @@ int ui_modify_bill_form(WINDOW *parent_win, BillNode *bill) {
                     cf++;
                 } else {
                     double a = atof(amt);
-                    BillNode nb = make_bill(pn, item, a);
+                    /* 修改时保留原来的ID */
+                    BillNode nb = make_bill(bill->oderId, bill->patientId, pn, item, a);
                     modify_bill(g_bills, old_pn, old_item, nb);
                     save_bills(DATA_PATH_BILLS, g_bills);
                     ui_show_message("成功", "费用修改成功", 1);
@@ -3479,7 +3514,9 @@ int ui_add_user_form(WINDOW *parent_win) {
                     if (strlen(un) == 0 || strlen(pw) == 0) ui_show_message("错误", "用户名密码必填", 2);
                     else if (find_user(g_users, un)) ui_show_message("错误", "用户已存在", 2);
                     else {
-                        AuthNode a = make_user(un, pw, role);
+                        char userId[MAX_ID];
+                        generate_unique_id(userId, sizeof(userId), "U");
+                        AuthNode a = make_user(userId, un, pw, role);
                         add_user(&g_users, a);
                         save_users(DATA_PATH_USERS, g_users);
                         ui_show_message("成功", "用户添加成功", 1);
@@ -3538,7 +3575,8 @@ int ui_modify_user_form(WINDOW *parent_win, AuthNode *user) {
                 } else {
                     if (strlen(pw) == 0) ui_show_message("错误", "密码不能为空", 2);
                     else {
-                        AuthNode ni = make_user(user->username, pw, user->role);
+                        /* 修改密码时保留原来的userId */
+                        AuthNode ni = make_user(user->userId, user->username, pw, user->role);
                         modify_user(g_users, user->username, ni);
                         save_users(DATA_PATH_USERS, g_users);
                         ui_show_message("成功", "密码修改成功", 1);
@@ -3739,8 +3777,8 @@ int ui_main(void) {
         } else if (role >= 0) {
             /* 根据角色进入不同的界面 */
             if (role == ROLE_PATIENT) {
-                /* 患者使用独立的患者门户界面 */
-                ui_patient_portal_main(g_current_user->username);
+                /* 患者使用独立的患者门户界面，传入userId和用户名 */
+                ui_patient_portal_main(g_current_user->userId, g_current_user->username);
             } else {
                 /* 医生和管理员使用原有的主界面 */
                 ui_main_screen(role);

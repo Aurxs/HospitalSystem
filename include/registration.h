@@ -5,14 +5,16 @@
 
 /**
  * 功能：构造一个挂号记录
- * 参数：patientName - 患者姓名
+ * 参数：orderId - 挂号记录唯一ID
+ *       patientId - 患者ID
+ *       patientName - 患者姓名
  *       doctorName - 医生姓名
  *       department - 科室名称
  *       date - 日期 (格式如 2023-10-01)
  * 返回值：构造好的挂号节点（按值返回）
  */
-RegisterNode make_registration(const char *patientName, const char *doctorName,
-                               const char *department, const char *date);
+RegisterNode make_registration(const char *orderId, const char *patientId, const char *patientName, 
+                               const char *doctorName, const char *department, const char *date);
 
 /**
  * 功能：添加一个新挂号记录

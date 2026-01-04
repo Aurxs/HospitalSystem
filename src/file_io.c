@@ -17,6 +17,7 @@
 // ================== 患者数据保存与读取 ==================
 
 // 保存患者链表到文件
+// 格式: userId|name|age|gender|phone|diagnosis|treatment
 int save_patients(const char *filename, PatientNode *head) {
     FILE *fp = fopen(filename, "w");
     if (fp == NULL) {
@@ -26,7 +27,8 @@ int save_patients(const char *filename, PatientNode *head) {
 
     PatientNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%d|%s|%s|%s|%s\n",
+        fprintf(fp, "%s|%s|%d|%s|%s|%s|%s\n",
+                current->userId,
                 current->name,
                 current->age,
                 current->gender,
@@ -54,12 +56,17 @@ PatientNode *load_patients(const char *filename) {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
 
-        char name[MAX_NAME], gender[MAX_GENDER], phone[MAX_PHONE];
+        char userId[MAX_ID], name[MAX_NAME], gender[MAX_GENDER], phone[MAX_PHONE];
         char diagnosis[MAX_DESC], treatment[MAX_DESC];
         int age;
 
         // 解析数据
         char *token = strtok(line, "|");
+        if (token == NULL) continue;
+        strncpy(userId, token, MAX_ID - 1);
+        userId[MAX_ID - 1] = '\0';
+
+        token = strtok(NULL, "|");
         if (token == NULL) continue;
         strncpy(name, token, MAX_NAME - 1);
         name[MAX_NAME - 1] = '\0';
@@ -88,7 +95,7 @@ PatientNode *load_patients(const char *filename) {
         strncpy(treatment, token, MAX_DESC - 1);
         treatment[MAX_DESC - 1] = '\0';
 
-        PatientNode p = make_patient(name, age, gender, phone, diagnosis, treatment);
+        PatientNode p = make_patient(userId, name, age, gender, phone, diagnosis, treatment);
         add_patient(&head, p);
     }
 
@@ -99,6 +106,7 @@ PatientNode *load_patients(const char *filename) {
 // ================== 医生数据保存与读取 ==================
 
 // 保存医生链表到文件
+// 格式: userId|name|age|gender|department|phone|schedule
 int save_doctors(const char *filename, DoctorNode *head) {
     FILE *fp = fopen(filename, "w");
     if (fp == NULL) {
@@ -108,7 +116,8 @@ int save_doctors(const char *filename, DoctorNode *head) {
 
     DoctorNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%d|%s|%s|%s|%s\n",
+        fprintf(fp, "%s|%s|%d|%s|%s|%s|%s\n",
+                current->userId,
                 current->name,
                 current->age,
                 current->gender,
@@ -136,17 +145,19 @@ DoctorNode *load_doctors(const char *filename) {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
 
-        char name[MAX_NAME], gender[MAX_GENDER], department[MAX_DEPT], phone[MAX_PHONE], schedule[MAX_DEPT];
+        char userId[MAX_ID], name[MAX_NAME], gender[MAX_GENDER], department[MAX_DEPT], phone[MAX_PHONE], schedule[MAX_DEPT];
         int age;
         
-        // 初始化schedule为空（向后兼容）
-        // 旧版本数据格式: name|age|gender|department|phone
-        // 新版本数据格式: name|age|gender|department|phone|schedule
-        // 如果文件中没有schedule字段，则使用空字符串
+        memset(userId, 0, sizeof(userId));
         memset(schedule, 0, sizeof(schedule));
 
         // 解析数据
         char *token = strtok(line, "|");
+        if (token == NULL) continue;
+        strncpy(userId, token, MAX_ID - 1);
+        userId[MAX_ID - 1] = '\0';
+
+        token = strtok(NULL, "|");
         if (token == NULL) continue;
         strncpy(name, token, MAX_NAME - 1);
         name[MAX_NAME - 1] = '\0';
@@ -170,14 +181,13 @@ DoctorNode *load_doctors(const char *filename) {
         strncpy(phone, token, MAX_PHONE - 1);
         phone[MAX_PHONE - 1] = '\0';
 
-        // 读取排班字段（可选，兼容旧数据）
         token = strtok(NULL, "|");
         if (token != NULL) {
             strncpy(schedule, token, MAX_DEPT - 1);
             schedule[MAX_DEPT - 1] = '\0';
         }
 
-        DoctorNode d = make_doctor(name, age, gender, department, phone, schedule);
+        DoctorNode d = make_doctor(userId, name, age, gender, department, phone, schedule);
         add_doctor(&head, d);
     }
 
@@ -263,6 +273,7 @@ DrugNode *load_drugs(const char *filename) {
 // ================== 挂号记录保存与读取 ==================
 
 // 保存挂号记录链表到文件
+// 格式: orderId|patientId|patientName|doctorName|department|date
 int save_registrations(const char *filename, RegisterNode *head) {
     FILE *fp = fopen(filename, "w");
     if (fp == NULL) {
@@ -272,7 +283,9 @@ int save_registrations(const char *filename, RegisterNode *head) {
 
     RegisterNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%s|%s|%s\n",
+        fprintf(fp, "%s|%s|%s|%s|%s|%s\n",
+                current->oderId,
+                current->patientId,
                 current->patientName,
                 current->doctorName,
                 current->department,
@@ -298,10 +311,20 @@ RegisterNode *load_registrations(const char *filename) {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
 
-        char patientName[MAX_NAME], doctorName[MAX_NAME], department[MAX_DEPT], date[MAX_NAME];
+        char orderId[MAX_ID], patientId[MAX_ID], patientName[MAX_NAME], doctorName[MAX_NAME], department[MAX_DEPT], date[MAX_NAME];
 
         // 解析数据
         char *token = strtok(line, "|");
+        if (token == NULL) continue;
+        strncpy(orderId, token, MAX_ID - 1);
+        orderId[MAX_ID - 1] = '\0';
+
+        token = strtok(NULL, "|");
+        if (token == NULL) continue;
+        strncpy(patientId, token, MAX_ID - 1);
+        patientId[MAX_ID - 1] = '\0';
+
+        token = strtok(NULL, "|");
         if (token == NULL) continue;
         strncpy(patientName, token, MAX_NAME - 1);
         patientName[MAX_NAME - 1] = '\0';
@@ -321,7 +344,7 @@ RegisterNode *load_registrations(const char *filename) {
         strncpy(date, token, MAX_NAME - 1);
         date[MAX_NAME - 1] = '\0';
 
-        RegisterNode r = make_registration(patientName, doctorName, department, date);
+        RegisterNode r = make_registration(orderId, patientId, patientName, doctorName, department, date);
         add_registration(&head, r);
     }
 
@@ -332,6 +355,7 @@ RegisterNode *load_registrations(const char *filename) {
 // ================== 费用记录保存与读取 ==================
 
 // 保存费用记录链表到文件
+// 格式: orderId|patientId|patientName|itemName|amount
 int save_bills(const char *filename, BillNode *head) {
     FILE *fp = fopen(filename, "w");
     if (fp == NULL) {
@@ -341,7 +365,9 @@ int save_bills(const char *filename, BillNode *head) {
 
     BillNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%s|%.2f\n",
+        fprintf(fp, "%s|%s|%s|%s|%.2f\n",
+                current->oderId,
+                current->patientId,
                 current->patientName,
                 current->itemName,
                 current->amount);
@@ -366,11 +392,21 @@ BillNode *load_bills(const char *filename) {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
 
-        char patientName[MAX_NAME], itemName[MAX_NAME];
+        char orderId[MAX_ID], patientId[MAX_ID], patientName[MAX_NAME], itemName[MAX_NAME];
         double amount;
 
         // 解析数据
         char *token = strtok(line, "|");
+        if (token == NULL) continue;
+        strncpy(orderId, token, MAX_ID - 1);
+        orderId[MAX_ID - 1] = '\0';
+
+        token = strtok(NULL, "|");
+        if (token == NULL) continue;
+        strncpy(patientId, token, MAX_ID - 1);
+        patientId[MAX_ID - 1] = '\0';
+
+        token = strtok(NULL, "|");
         if (token == NULL) continue;
         strncpy(patientName, token, MAX_NAME - 1);
         patientName[MAX_NAME - 1] = '\0';
@@ -384,7 +420,7 @@ BillNode *load_bills(const char *filename) {
         if (token == NULL) continue;
         amount = atof(token);
 
-        BillNode b = make_bill(patientName, itemName, amount);
+        BillNode b = make_bill(orderId, patientId, patientName, itemName, amount);
         add_bill(&head, b);
     }
 
@@ -395,6 +431,7 @@ BillNode *load_bills(const char *filename) {
 //================== 用户登录信息保存与读取 ==================
 
 // 保存用户链表到文件
+// 格式: userId|username|password|role
 int save_users(const char *filename, AuthNode *head) {
     FILE *fp = fopen(filename, "w");
     if (fp == NULL) {
@@ -403,7 +440,8 @@ int save_users(const char *filename, AuthNode *head) {
     }
     AuthNode *current = head;
     while (current != NULL) {
-        fprintf(fp, "%s|%s|%d\n",
+        fprintf(fp, "%s|%s|%s|%d\n",
+                current->userId,
                 current->username,
                 current->password,
                 current->role);
@@ -424,11 +462,16 @@ AuthNode *load_users(const char *filename) {
     while (fgets(line, sizeof(line), fp) != NULL) {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
-        char username[MAX_NAME], password[MAX_NAME];
+        char userId[MAX_ID], username[MAX_NAME], password[MAX_NAME];
         int role = 2;  // 默认为患者权限（最低权限）
         
         // 解析数据
         char *token = strtok(line, "|");
+        if (token == NULL) continue;
+        strncpy(userId, token, MAX_ID - 1);
+        userId[MAX_ID - 1] = '\0';
+        
+        token = strtok(NULL, "|");
         if (token == NULL) continue;
         strncpy(username, token, MAX_NAME - 1);
         username[MAX_NAME - 1] = '\0';
@@ -447,6 +490,7 @@ AuthNode *load_users(const char *filename) {
         // 直接构造节点，避免 make_user 再次加密
         AuthNode a;
         memset(&a, 0, sizeof(AuthNode));
+        strncpy(a.userId, userId, MAX_ID - 1);
         strncpy(a.username, username, MAX_NAME - 1);
         strncpy(a.password, password, MAX_NAME - 1);
         a.role = role;  // 设置角色

@@ -5,7 +5,8 @@
 
 /**
  *功能：构建一个医生节点
- *参数：name - 医生姓名
+ *参数：userId - 用户唯一ID
+ *      name - 医生姓名
  *      age - 医生年龄
  *      gender - 医生性别
  *      department - 医生科室
@@ -13,7 +14,7 @@
  *      schedule - 医生排班信息
  *返回值：构造好的医生节点指针
  */
-DoctorNode make_doctor(const char *name, int age, const char *gender, const char *department, const char *phone, const char *schedule);
+DoctorNode make_doctor(const char *userId, const char *name, int age, const char *gender, const char *department, const char *phone, const char *schedule);
 
 /**
  * 功能：添加一个新医生

@@ -8,10 +8,12 @@
 #include "../include/registration.h"
 
 // 工具: 构造一个挂号记录（按值返回，便于直接传给 add_registration）
-RegisterNode make_registration(const char *patientName, const char *doctorName,
-                               const char *department, const char *date) {
+RegisterNode make_registration(const char *orderId, const char *patientId, const char *patientName,
+                               const char *doctorName, const char *department, const char *date) {
     RegisterNode r;
     memset(&r, 0, sizeof(r));
+    snprintf(r.oderId, sizeof(r.oderId), "%s", orderId);
+    snprintf(r.patientId, sizeof(r.patientId), "%s", patientId);
     snprintf(r.patientName, sizeof(r.patientName), "%s", patientName);
     snprintf(r.doctorName, sizeof(r.doctorName), "%s", doctorName);
     snprintf(r.department, sizeof(r.department), "%s", department);
@@ -29,6 +31,8 @@ RegisterNode *add_registration(RegisterNode **head, const RegisterNode newInfo) 
     }
 
     // 将新数据填入临时结构体newNode
+    strcpy(newNode->oderId, newInfo.oderId);
+    strcpy(newNode->patientId, newInfo.patientId);
     strcpy(newNode->patientName, newInfo.patientName);
     strcpy(newNode->doctorName, newInfo.doctorName);
     strcpy(newNode->department, newInfo.department);
