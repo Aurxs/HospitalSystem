@@ -3771,8 +3771,9 @@ void ui_patient_register(WINDOW *content_win) {
                     char date[MAX_NAME] = "";
                     int confirm_field = 0;
                     int confirm_ch;
+                    int confirm_done = 0; /* 用于替代goto的标志 */
                     
-                    while (1) {
+                    while (!confirm_done) {
                         werase(confirm_win);
                         ui_draw_box(confirm_win, "确认挂号");
                         
@@ -3841,11 +3842,11 @@ void ui_patient_register(WINDOW *content_win) {
                                 delwin(confirm_win);
                                 touchwin(stdscr);
                                 refresh();
-                                goto continue_loop;
+                                confirm_done = 1; /* 使用标志替代goto */
+                                break;
                         }
                     }
                 }
-                continue_loop:
                 break;
             }
             case 'b':
