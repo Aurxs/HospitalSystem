@@ -4193,6 +4193,786 @@ void ui_patient_main_screen(void) {
 }
 
 /* ============================================================================
+ * 医生专用界面
+ * 说明: 医生用户使用独立的界面，与管理员和患者界面完全分开
+ *       医生只能管理自己的患者（通过挂号记录关联）
+ * ============================================================================ */
+
+/* 辅助函数：检查患者是否属于当前医生（通过挂号记录判断） */
+static int is_patient_of_doctor(const char *patient_name, const char *doctor_name) {
+    RegisterNode *reg = g_registrations;
+    while (reg != NULL) {
+        if (strcmp(reg->patientName, patient_name) == 0 &&
+            strcmp(reg->doctorName, doctor_name) == 0) {
+            return 1;
+        }
+        reg = reg->next;
+    }
+    return 0;
+}
+
+/* 医生专用：查询自己的患者 */
+static void ui_doctor_search_patient(WINDOW *parent_win) {
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    WINDOW *w = newwin(12, 50, (max_y - 12) / 2, (max_x - 50) / 2);
+    keypad(w, TRUE);
+    char kw[MAX_NAME] = "";
+    int ch;
+    while (1) {
+        werase(w);
+        ui_draw_box(w, "查询我的患者");
+        mvwprintw(w, 2, 3, "姓名: [%-25s]", kw);
+        mvwprintw(w, 4, 3, "[Enter]查询  [ESC]返回");
+        mvwprintw(w, 6, 3, "只在您的患者中查询");
+        wrefresh(w);
+        ch = wgetch(w);
+        if (ch == '\n' || ch == KEY_ENTER) {
+            mvwprintw(w, 2, 10, "[%-25s]", "");
+            wrefresh(w);
+            if (ui_input_string(w, 2, 11, kw, 25, 0) >= 0) {
+                /* 只在医生自己的患者中查找 */
+                PatientNode *p = g_patients;
+                PatientNode *found = NULL;
+                while (p != NULL) {
+                    if (is_patient_of_doctor(p->name, g_current_user->username) &&
+                        strstr(p->name, kw) != NULL) {
+                        found = p;
+                        break;
+                    }
+                    p = p->next;
+                }
+                if (found) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "找到: %s, %d岁, %s", 
+                             found->name, found->age, found->phone);
+                    ui_show_message("结果", msg, 1);
+                } else {
+                    ui_show_message("结果", "在您的患者中未找到", 3);
+                }
+            }
+        } else if (ch == 27) {
+            delwin(w);
+            touchwin(stdscr);
+            refresh();
+            return;
+        }
+    }
+}
+
+/* 医生专用：查询自己的挂号记录 */
+static void ui_doctor_search_registration(WINDOW *parent_win) {
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    WINDOW *w = newwin(12, 50, (max_y - 12) / 2, (max_x - 50) / 2);
+    keypad(w, TRUE);
+    char kw[MAX_NAME] = "";
+    int ch;
+    while (1) {
+        werase(w);
+        ui_draw_box(w, "查询我的挂号");
+        mvwprintw(w, 2, 3, "患者姓名: [%-25s]", kw);
+        mvwprintw(w, 4, 3, "[Enter]查询  [ESC]返回");
+        mvwprintw(w, 6, 3, "只在您的挂号中查询");
+        wrefresh(w);
+        ch = wgetch(w);
+        if (ch == '\n' || ch == KEY_ENTER) {
+            mvwprintw(w, 2, 14, "[%-25s]", "");
+            wrefresh(w);
+            if (ui_input_string(w, 2, 15, kw, 25, 0) >= 0) {
+                /* 只在医生自己的挂号记录中查找 */
+                RegisterNode *r = g_registrations;
+                RegisterNode *found = NULL;
+                while (r != NULL) {
+                    if (strcmp(r->doctorName, g_current_user->username) == 0 &&
+                        strstr(r->patientName, kw) != NULL) {
+                        found = r;
+                        break;
+                    }
+                    r = r->next;
+                }
+                if (found) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "找到: %s, 科室: %s, 日期: %s", 
+                             found->patientName, found->department, found->date);
+                    ui_show_message("结果", msg, 1);
+                } else {
+                    ui_show_message("结果", "在您的挂号中未找到", 3);
+                }
+            }
+        } else if (ch == 27) {
+            delwin(w);
+            touchwin(stdscr);
+            refresh();
+            return;
+        }
+    }
+}
+
+/* 医生专用：为自己的患者添加费用 */
+static int ui_doctor_add_bill_form(WINDOW *parent_win) {
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    WINDOW *w = newwin(14, 60, (max_y - 14) / 2, (max_x - 60) / 2);
+    keypad(w, TRUE);
+    char pn[MAX_NAME] = "", item[MAX_NAME] = "", amt[20] = "";
+    int cf = 0, ch;
+    
+    /* 先统计医生的患者数量并显示提示 */
+    int my_patient_count = 0;
+    PatientNode *pt = g_patients;
+    while (pt != NULL) {
+        if (is_patient_of_doctor(pt->name, g_current_user->username)) {
+            my_patient_count++;
+        }
+        pt = pt->next;
+    }
+    
+    while (1) {
+        werase(w);
+        ui_draw_box(w, "添加患者费用");
+        mvwprintw(w, 2, 3, "患者姓名:");
+        mvwprintw(w, 4, 3, "收费项目:");
+        mvwprintw(w, 6, 3, "金    额:");
+        mvwprintw(w, 8, 3, "(只能为您的患者添加费用)");
+        int i;
+        for (i = 0; i < 3; i++) {
+            if (cf == i)
+                wattron(w, COLOR_PAIR(COLOR_PAIR_SELECT));
+            switch (i) {
+                case 0: mvwprintw(w, 2, 14, "[%-30s]", pn);
+                    break;
+                case 1: mvwprintw(w, 4, 14, "[%-30s]", item);
+                    break;
+                case 2: mvwprintw(w, 6, 14, "[%-30s]", amt);
+                    break;
+            }
+            if (cf == i)
+                wattroff(w, COLOR_PAIR(COLOR_PAIR_SELECT));
+        }
+        if (cf == 3)
+            wattron(w, COLOR_PAIR(COLOR_PAIR_SELECT)|A_BOLD);
+        mvwprintw(w, 11, 15, "  [ 确认 ]  ");
+        if (cf == 3)
+            wattroff(w, COLOR_PAIR(COLOR_PAIR_SELECT)|A_BOLD);
+        wrefresh(w);
+        ch = wgetch(w);
+        switch (ch) {
+            case KEY_UP: if (cf > 0) cf--;
+                break;
+            case KEY_DOWN:
+            case '\t': if (cf < 3) cf++;
+                break;
+            case '\n':
+            case KEY_ENTER:
+                if (cf < 3) {
+                    char *t = NULL;
+                    int ry = 2 + cf * 2;
+                    switch (cf) {
+                        case 0: t = pn;
+                            break;
+                        case 1: t = item;
+                            break;
+                        case 2: t = amt;
+                            break;
+                    }
+                    if (t) {
+                        mvwprintw(w, ry, 14, "[%-30s]", "");
+                        wrefresh(w);
+                        ui_input_string(w, ry, 15, t, 30, 0);
+                    }
+                    cf++;
+                } else {
+                    if (strlen(pn) == 0) {
+                        ui_show_message("错误", "患者姓名必填", 2);
+                    } else if (!is_patient_of_doctor(pn, g_current_user->username)) {
+                        /* 检查是否是医生自己的患者 */
+                        ui_show_message("错误", "该患者不是您的患者，无法添加费用", 2);
+                    } else {
+                        double a = atof(amt);
+                        BillNode b = make_bill(pn, item, a);
+                        add_bill(&g_bills, b);
+                        save_bills(DATA_PATH_BILLS, g_bills);
+                        ui_show_message("成功", "费用添加成功", 1);
+                        delwin(w);
+                        touchwin(stdscr);
+                        refresh();
+                        return 0;
+                    }
+                }
+                break;
+            case 27: 
+                delwin(w);
+                touchwin(stdscr);
+                refresh();
+                return -1;
+        }
+    }
+}
+
+/* 医生患者管理 - 只显示和管理自己的患者 */
+void ui_doctor_patient_management(WINDOW *content_win) {
+    int max_y, max_x;
+    getmaxyx(content_win, max_y, max_x);
+    
+    int selected_row = 0;
+    int start_index = 0;
+    int ch;
+    
+    while (1) {
+        werase(content_win);
+        ui_draw_box(content_win, "我的患者管理");
+        
+        /* 统计属于当前医生的患者 */
+        int my_patient_count = 0;
+        PatientNode *temp = g_patients;
+        while (temp != NULL) {
+            if (is_patient_of_doctor(temp->name, g_current_user->username)) {
+                my_patient_count++;
+            }
+            temp = temp->next;
+        }
+        
+        /* 绘制表头 */
+        const char *headers[] = {"序号", "姓名", "年龄", "性别", "电话", "诊断", "治疗方案"};
+        int col_widths[] = {4, 10, 4, 4, 13, 15, 15};
+        int col_count = 7;
+        
+        wattron(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+        int x = 1;
+        int i;
+        for (i = 0; i < col_count; i++) {
+            mvwprintw(content_win, 1, x, "%-*s", col_widths[i], headers[i]);
+            x += col_widths[i] + 1;
+        }
+        wattroff(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+        
+        /* 显示属于当前医生的患者 */
+        PatientNode *current = g_patients;
+        int display_row = 0;
+        int row_y = 3;
+        int visible_index = 0;
+        
+        while (current != NULL && row_y < max_y - 4) {
+            /* 只显示属于当前医生的患者 */
+            if (!is_patient_of_doctor(current->name, g_current_user->username)) {
+                current = current->next;
+                continue;
+            }
+            
+            /* 跳过前面的记录 */
+            if (visible_index < start_index) {
+                visible_index++;
+                current = current->next;
+                continue;
+            }
+            
+            x = 1;
+            if (display_row == selected_row) {
+                wattron(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+            }
+            
+            mvwprintw(content_win, row_y, x, "%-*d", col_widths[0], visible_index + 1);
+            x += col_widths[0] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[1], col_widths[1], current->name);
+            x += col_widths[1] + 1;
+            mvwprintw(content_win, row_y, x, "%-*d", col_widths[2], current->age);
+            x += col_widths[2] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[3], col_widths[3], current->gender);
+            x += col_widths[3] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[4], col_widths[4], current->phone);
+            x += col_widths[4] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[5], col_widths[5], current->diagnosis);
+            x += col_widths[5] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[6], col_widths[6], current->treatment);
+            
+            if (display_row == selected_row) {
+                wattroff(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+            }
+            
+            current = current->next;
+            visible_index++;
+            display_row++;
+            row_y++;
+        }
+        
+        if (my_patient_count == 0) {
+            wattron(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
+            ui_center_string(content_win, max_y / 2, "暂无患者记录");
+            wattroff(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
+        }
+        
+        mvwprintw(content_win, max_y - 3, 2, "[M]修改诊断/治疗 [S]查询 [B]返回");
+        mvwprintw(content_win, max_y - 2, 2, "共 %d 位患者", my_patient_count);
+        
+        wrefresh(content_win);
+        ch = wgetch(content_win);
+        
+        switch (ch) {
+            case KEY_UP:
+            case 'k':
+                if (selected_row > 0) selected_row--;
+                else if (start_index > 0) start_index--;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                if (selected_row < display_row - 1) selected_row++;
+                else if (start_index + display_row < my_patient_count) start_index++;
+                break;
+            case 'm':
+            case 'M':
+                if (my_patient_count > 0) {
+                    /* 找到选中的患者 */
+                    PatientNode *sel_patient = g_patients;
+                    int target = start_index + selected_row;
+                    int cur_visible = 0;
+                    while (sel_patient != NULL) {
+                        if (is_patient_of_doctor(sel_patient->name, g_current_user->username)) {
+                            if (cur_visible == target) break;
+                            cur_visible++;
+                        }
+                        sel_patient = sel_patient->next;
+                    }
+                    if (sel_patient != NULL) {
+                        ui_modify_patient_form(content_win, sel_patient);
+                    }
+                }
+                break;
+            case 's':
+            case 'S':
+                ui_doctor_search_patient(content_win);
+                break;
+            case 'b':
+            case 'B':
+            case 27:
+                return;
+        }
+    }
+}
+
+/* 医生挂号管理 - 只显示和管理自己的挂号记录 */
+void ui_doctor_registration_management(WINDOW *content_win) {
+    int max_y, max_x;
+    getmaxyx(content_win, max_y, max_x);
+    
+    int selected_row = 0;
+    int start_index = 0;
+    int ch;
+    
+    while (1) {
+        werase(content_win);
+        ui_draw_box(content_win, "我的挂号记录");
+        
+        /* 统计属于当前医生的挂号记录 */
+        int my_count = 0;
+        RegisterNode *temp = g_registrations;
+        while (temp != NULL) {
+            if (strcmp(temp->doctorName, g_current_user->username) == 0) {
+                my_count++;
+            }
+            temp = temp->next;
+        }
+        
+        /* 绘制表头 */
+        const char *headers[] = {"序号", "患者", "科室", "日期"};
+        int col_widths[] = {4, 15, 15, 15};
+        int col_count = 4;
+        
+        wattron(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+        int x = 1;
+        int i;
+        for (i = 0; i < col_count; i++) {
+            mvwprintw(content_win, 1, x, "%-*s", col_widths[i], headers[i]);
+            x += col_widths[i] + 1;
+        }
+        wattroff(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+        
+        /* 显示属于当前医生的挂号记录 */
+        RegisterNode *current = g_registrations;
+        int display_row = 0;
+        int row_y = 3;
+        int visible_index = 0;
+        
+        while (current != NULL && row_y < max_y - 4) {
+            /* 只显示当前医生的挂号 */
+            if (strcmp(current->doctorName, g_current_user->username) != 0) {
+                current = current->next;
+                continue;
+            }
+            
+            /* 跳过前面的记录 */
+            if (visible_index < start_index) {
+                visible_index++;
+                current = current->next;
+                continue;
+            }
+            
+            x = 1;
+            if (display_row == selected_row) {
+                wattron(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+            }
+            
+            mvwprintw(content_win, row_y, x, "%-*d", col_widths[0], visible_index + 1);
+            x += col_widths[0] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[1], col_widths[1], current->patientName);
+            x += col_widths[1] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[2], col_widths[2], current->department);
+            x += col_widths[2] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[3], col_widths[3], current->date);
+            
+            if (display_row == selected_row) {
+                wattroff(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+            }
+            
+            current = current->next;
+            visible_index++;
+            display_row++;
+            row_y++;
+        }
+        
+        if (my_count == 0) {
+            wattron(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
+            ui_center_string(content_win, max_y / 2, "暂无挂号记录");
+            wattroff(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
+        }
+        
+        mvwprintw(content_win, max_y - 3, 2, "[D]删除 [S]查询 [B]返回");
+        mvwprintw(content_win, max_y - 2, 2, "共 %d 条挂号记录", my_count);
+        
+        wrefresh(content_win);
+        ch = wgetch(content_win);
+        
+        switch (ch) {
+            case KEY_UP:
+            case 'k':
+                if (selected_row > 0) selected_row--;
+                else if (start_index > 0) start_index--;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                if (selected_row < display_row - 1) selected_row++;
+                else if (start_index + display_row < my_count) start_index++;
+                break;
+            case 'd':
+            case 'D':
+                if (my_count > 0) {
+                    /* 找到选中的挂号记录 */
+                    RegisterNode *sel_reg = g_registrations;
+                    int target = start_index + selected_row;
+                    int cur_visible = 0;
+                    while (sel_reg != NULL) {
+                        if (strcmp(sel_reg->doctorName, g_current_user->username) == 0) {
+                            if (cur_visible == target) break;
+                            cur_visible++;
+                        }
+                        sel_reg = sel_reg->next;
+                    }
+                    if (sel_reg != NULL && ui_confirm_dialog("确认", "删除此挂号记录?")) {
+                        g_registrations = delete_registration(g_registrations, sel_reg->patientName, sel_reg->date);
+                        save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
+                        if (selected_row > 0) selected_row--;
+                    }
+                }
+                break;
+            case 's':
+            case 'S':
+                ui_doctor_search_registration(content_win);
+                break;
+            case 'b':
+            case 'B':
+            case 27:
+                return;
+        }
+    }
+}
+
+/* 医生费用管理 - 只显示和管理自己患者的费用 */
+void ui_doctor_bill_management(WINDOW *content_win) {
+    int max_y, max_x;
+    getmaxyx(content_win, max_y, max_x);
+    
+    int selected_row = 0;
+    int start_index = 0;
+    int ch;
+    
+    while (1) {
+        werase(content_win);
+        ui_draw_box(content_win, "患者费用管理");
+        
+        /* 统计属于当前医生患者的费用记录 */
+        int my_count = 0;
+        double total_amount = 0.0;
+        BillNode *temp = g_bills;
+        while (temp != NULL) {
+            if (is_patient_of_doctor(temp->patientName, g_current_user->username)) {
+                my_count++;
+                total_amount += temp->amount;
+            }
+            temp = temp->next;
+        }
+        
+        /* 绘制表头 */
+        const char *headers[] = {"序号", "患者", "项目", "金额"};
+        int col_widths[] = {4, 15, 20, 10};
+        int col_count = 4;
+        
+        wattron(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+        int x = 1;
+        int i;
+        for (i = 0; i < col_count; i++) {
+            mvwprintw(content_win, 1, x, "%-*s", col_widths[i], headers[i]);
+            x += col_widths[i] + 1;
+        }
+        wattroff(content_win, COLOR_PAIR(COLOR_PAIR_HEADER) | A_BOLD | A_UNDERLINE);
+        
+        /* 显示属于当前医生患者的费用记录 */
+        BillNode *current = g_bills;
+        int display_row = 0;
+        int row_y = 3;
+        int visible_index = 0;
+        
+        while (current != NULL && row_y < max_y - 5) {
+            /* 只显示属于当前医生患者的费用 */
+            if (!is_patient_of_doctor(current->patientName, g_current_user->username)) {
+                current = current->next;
+                continue;
+            }
+            
+            /* 跳过前面的记录 */
+            if (visible_index < start_index) {
+                visible_index++;
+                current = current->next;
+                continue;
+            }
+            
+            x = 1;
+            if (display_row == selected_row) {
+                wattron(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+            }
+            
+            mvwprintw(content_win, row_y, x, "%-*d", col_widths[0], visible_index + 1);
+            x += col_widths[0] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[1], col_widths[1], current->patientName);
+            x += col_widths[1] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.*s", col_widths[2], col_widths[2], current->itemName);
+            x += col_widths[2] + 1;
+            mvwprintw(content_win, row_y, x, "%-*.2f", col_widths[3], current->amount);
+            
+            if (display_row == selected_row) {
+                wattroff(content_win, COLOR_PAIR(COLOR_PAIR_SELECT));
+            }
+            
+            current = current->next;
+            visible_index++;
+            display_row++;
+            row_y++;
+        }
+        
+        if (my_count == 0) {
+            wattron(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
+            ui_center_string(content_win, max_y / 2, "暂无费用记录");
+            wattroff(content_win, COLOR_PAIR(COLOR_PAIR_WARNING));
+        }
+        
+        mvwprintw(content_win, max_y - 4, 2, "[A]添加 [D]删除 [M]修改 [B]返回");
+        mvwprintw(content_win, max_y - 3, 2, "共 %d 条记录  总金额: %.2f 元", my_count, total_amount);
+        
+        wrefresh(content_win);
+        ch = wgetch(content_win);
+        
+        switch (ch) {
+            case KEY_UP:
+            case 'k':
+                if (selected_row > 0) selected_row--;
+                else if (start_index > 0) start_index--;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                if (selected_row < display_row - 1) selected_row++;
+                else if (start_index + display_row < my_count) start_index++;
+                break;
+            case 'a':
+            case 'A': {
+                /* 添加费用 - 只能为自己的患者添加 */
+                int my_patient_count = 0;
+                PatientNode *pt = g_patients;
+                while (pt != NULL) {
+                    if (is_patient_of_doctor(pt->name, g_current_user->username)) {
+                        my_patient_count++;
+                    }
+                    pt = pt->next;
+                }
+                if (my_patient_count == 0) {
+                    ui_show_message("提示", "您目前没有患者，无法添加费用", 3);
+                } else {
+                    ui_doctor_add_bill_form(content_win);
+                }
+                break;
+            }
+            case 'd':
+            case 'D':
+                if (my_count > 0) {
+                    /* 找到选中的费用记录 */
+                    BillNode *sel_bill = g_bills;
+                    int target = start_index + selected_row;
+                    int cur_visible = 0;
+                    while (sel_bill != NULL) {
+                        if (is_patient_of_doctor(sel_bill->patientName, g_current_user->username)) {
+                            if (cur_visible == target) break;
+                            cur_visible++;
+                        }
+                        sel_bill = sel_bill->next;
+                    }
+                    if (sel_bill != NULL && ui_confirm_dialog("确认", "删除此费用记录?")) {
+                        g_bills = delete_bill(g_bills, sel_bill->patientName, sel_bill->itemName);
+                        save_bills(DATA_PATH_BILLS, g_bills);
+                        if (selected_row > 0) selected_row--;
+                    }
+                }
+                break;
+            case 'm':
+            case 'M':
+                if (my_count > 0) {
+                    /* 找到选中的费用记录 */
+                    BillNode *sel_bill = g_bills;
+                    int target = start_index + selected_row;
+                    int cur_visible = 0;
+                    while (sel_bill != NULL) {
+                        if (is_patient_of_doctor(sel_bill->patientName, g_current_user->username)) {
+                            if (cur_visible == target) break;
+                            cur_visible++;
+                        }
+                        sel_bill = sel_bill->next;
+                    }
+                    if (sel_bill != NULL) {
+                        ui_modify_bill_form(content_win, sel_bill);
+                    }
+                }
+                break;
+            case 'b':
+            case 'B':
+            case 27:
+                return;
+        }
+    }
+}
+
+/* 医生专用主界面 */
+void ui_doctor_main_screen(void) {
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    
+    WINDOW *header_win = newwin(1, max_x, 0, 0);
+    WINDOW *sidebar_win = newwin(max_y - 2, SIDEBAR_WIDTH, 1, 0);
+    WINDOW *content_win = newwin(max_y - 2, max_x - SIDEBAR_WIDTH, 1, SIDEBAR_WIDTH);
+    WINDOW *status_win = newwin(1, max_x, max_y - 1, 0);
+    
+    keypad(sidebar_win, TRUE);
+    keypad(content_win, TRUE);
+    
+    /* 医生专用菜单 */
+    const char *doctor_menu[] = {
+        "1. 患者管理",
+        "2. 挂号管理",
+        "3. 费用管理",
+        "4. 退出登录",
+        "5. 退出系统"
+    };
+    int menu_count = 5;
+    int selected = 0;
+    int ch;
+    int running = 1;
+    
+    while (running) {
+        /* 刷新所有窗口 */
+        touchwin(stdscr);
+        refresh();
+        
+        /* 绘制标题栏 */
+        ui_draw_header(header_win);
+        
+        /* 绘制医生专用侧边栏 */
+        werase(sidebar_win);
+        ui_draw_box(sidebar_win, "医生菜单");
+        
+        int i;
+        for (i = 0; i < menu_count; i++) {
+            if (i == selected) {
+                wattron(sidebar_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
+                mvwprintw(sidebar_win, 2 + i, 1, " %-17s", doctor_menu[i]);
+                wattroff(sidebar_win, COLOR_PAIR(COLOR_PAIR_SELECT) | A_BOLD);
+            } else {
+                mvwprintw(sidebar_win, 2 + i, 2, "%-17s", doctor_menu[i]);
+            }
+        }
+        wrefresh(sidebar_win);
+        
+        /* 绘制状态栏 */
+        ui_draw_status_bar(status_win, NULL);
+        
+        /* 绘制内容区欢迎信息 */
+        werase(content_win);
+        ui_draw_box(content_win, "医生工作站");
+        mvwprintw(content_win, 3, 3, "欢迎您，%s 医生！", g_current_user->username);
+        mvwprintw(content_win, 5, 3, "可用功能：");
+        mvwprintw(content_win, 7, 5, "• 患者管理 - 查看和管理您的患者信息");
+        mvwprintw(content_win, 8, 5, "• 挂号管理 - 查看和管理您的挂号记录");
+        mvwprintw(content_win, 9, 5, "• 费用管理 - 管理您患者的费用记录");
+        mvwprintw(content_win, 11, 3, "提示：您只能查看和管理挂号到您的患者信息。");
+        wrefresh(content_win);
+        
+        ch = wgetch(sidebar_win);
+        
+        switch (ch) {
+            case KEY_UP:
+            case 'k':
+                if (selected > 0) selected--;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                if (selected < menu_count - 1) selected++;
+                break;
+            case '\n':
+            case KEY_ENTER:
+                switch (selected) {
+                    case 0: /* 患者管理 */
+                        ui_doctor_patient_management(content_win);
+                        break;
+                    case 1: /* 挂号管理 */
+                        ui_doctor_registration_management(content_win);
+                        break;
+                    case 2: /* 费用管理 */
+                        ui_doctor_bill_management(content_win);
+                        break;
+                    case 3: /* 退出登录 */
+                        running = 0;
+                        break;
+                    case 4: /* 退出系统 */
+                        delwin(header_win);
+                        delwin(sidebar_win);
+                        delwin(content_win);
+                        delwin(status_win);
+                        ui_cleanup();
+                        exit(0);
+                }
+                /* 重新刷新所有窗口 */
+                touchwin(stdscr);
+                refresh();
+                break;
+            case 'q':
+            case 'Q':
+                running = 0;
+                break;
+        }
+    }
+    
+    delwin(header_win);
+    delwin(sidebar_win);
+    delwin(content_win);
+    delwin(status_win);
+}
+
+/* ============================================================================
  * 主界面和入口函数
  * ============================================================================ */
 void ui_main_screen(int role) {
@@ -4327,8 +5107,11 @@ int ui_main(void) {
             /* 患者使用独立的界面 */
             if (role == ROLE_PATIENT) {
                 ui_patient_main_screen();
+            } else if (role == ROLE_DOCTOR) {
+                /* 医生使用独立的界面 */
+                ui_doctor_main_screen();
             } else {
-                /* 管理员和医生使用原有界面 */
+                /* 管理员使用原有界面 */
                 ui_main_screen(role);
             }
             g_current_user = NULL;

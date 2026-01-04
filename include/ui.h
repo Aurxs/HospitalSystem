@@ -785,4 +785,51 @@ void ui_patient_view_registrations(WINDOW *content_win);
  */
 void ui_patient_view_bills(WINDOW *content_win);
 
+/*
+ * ============================================================================
+ * 医生专用界面函数声明
+ * 说明: 这些函数仅供医生用户使用，与患者和管理员界面完全分开
+ *       医生只能管理自己的患者（通过挂号记录关联）
+ * ============================================================================
+ */
+
+/**
+ * 函数名: ui_doctor_main_screen
+ * 功能: 医生专用主界面
+ * 说明: 显示医生专用菜单，只包含管理自己患者的功能
+ * 参数: 无
+ * 返回值: 无
+ */
+void ui_doctor_main_screen(void);
+
+/**
+ * 函数名: ui_doctor_patient_management
+ * 功能: 医生管理自己的患者
+ * 说明: 只显示和管理挂号到当前医生的患者
+ * 参数: 
+ *   - content_win: 内容区域窗口指针
+ * 返回值: 无
+ */
+void ui_doctor_patient_management(WINDOW *content_win);
+
+/**
+ * 函数名: ui_doctor_registration_management
+ * 功能: 医生管理自己的挂号记录
+ * 说明: 只显示和管理当前医生的挂号记录
+ * 参数: 
+ *   - content_win: 内容区域窗口指针
+ * 返回值: 无
+ */
+void ui_doctor_registration_management(WINDOW *content_win);
+
+/**
+ * 函数名: ui_doctor_bill_management
+ * 功能: 医生管理自己患者的费用
+ * 说明: 只显示和管理挂号到当前医生的患者的费用记录
+ * 参数: 
+ *   - content_win: 内容区域窗口指针
+ * 返回值: 无
+ */
+void ui_doctor_bill_management(WINDOW *content_win);
+
 #endif //HOSPITALSYSTEM_UI_H
