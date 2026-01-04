@@ -3609,8 +3609,6 @@ void ui_patient_register(WINDOW *content_win) {
     
     int selected_row = 0;
     int start_index = 0;
-    int total_count = count_list_nodes(g_doctors, 1);
-    int page_size = max_y - 8;
     int ch;
     char dept_filter[MAX_DEPT] = ""; /* 科室筛选 */
     
