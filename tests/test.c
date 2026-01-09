@@ -1,6 +1,3 @@
-//
-// Created by 罗金源 on 2025/12/19.
-//
 #include <stdio.h>
 #include "test.h"
 int main() {
