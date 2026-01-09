@@ -195,6 +195,9 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
     * `AuthNode *delete_user(AuthNode *head, const char *username)`
         * **功能**: 删除指定用户。
         * **实现**: 遍历链表找到目标节点的前驱节点，修改指针指向以移除目标节点，并释放其内存。
+  * `int authenticate_user(AuthNode *head, const char *username, const char *password)`
+      * **功能**: 验证用户名和密码。
+      * **实现**: 遍历链表匹配用户名，验证密码（通常涉及解密比对）。
 
 ### 2. 患者管理模块 (Patient)
 
@@ -215,6 +218,15 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
     * `PatientNode *modify_patient(...)`
         * **功能**: 更新患者信息（如更新诊断结果）。
         * **实现**: 查找对应患者节点并覆盖旧数据。
+  * `PatientNode *delete_patient(PatientNode *head, const char *phone)`
+      * **功能**: 删除患者信息。
+      * **实现**: 根据电话号码找到节点并从链表中移除。
+  * `PatientNode *sort_patients_by_name(PatientNode *head)`
+      * **功能**: 按姓名字典序排序患者链表。
+  * `PatientNode *sort_patients_by_phone(PatientNode *head)`
+      * **功能**: 按电话号码字典序排序患者链表。
+  * `PatientNode *sort_patients_by_age(PatientNode *head)`
+      * **功能**: 按年龄升序排序患者链表。
 
 ### 3. 医生管理模块 (Doctor)
 
@@ -229,6 +241,14 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
         * **功能**: 查找医生信息。
     * `DoctorNode *modify_doctor(...)`
         * **功能**: 修改医生信息（如调整排班、晋升职称等）。
+  * `DoctorNode *delete_doctor(DoctorNode *head, const char *phone)`
+      * **功能**: 删除医生信息。
+  * `DoctorNode *sort_doctors_by_name(DoctorNode *head)`
+      * **功能**: 按姓名字典序排序医生链表。
+  * `DoctorNode *sort_doctors_by_phone(DoctorNode *head)`
+      * **功能**: 按电话号码字典序排序医生链表。
+  * `DoctorNode *sort_doctors_by_age(DoctorNode *head)`
+      * **功能**: 按年龄升序排序医生链表。
 
 ### 4. 药品管理模块 (Drug)
 
@@ -245,6 +265,10 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
         * **功能**: 修改药品信息（如调整价格、更新库存）。
     * `DrugNode *delete_drug(...)`
         * **功能**: 药品下架/删除。
+  * `DrugNode *sort_drugs_by_price(DrugNode *head)`
+      * **功能**: 按价格升序排序药品链表。
+  * `DrugNode *sort_drugs_by_stock(DrugNode *head)`
+      * **功能**: 按库存数量升序排序药品链表。
 
 ### 5. 挂号管理模块 (Registration)
 
@@ -259,6 +283,12 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
         * **功能**: 查询某位患者的挂号记录。
     * `RegisterNode *findRegistration_doctor(...)`
         * **功能**: 查询某位医生的待诊列表。
+  * `RegisterNode *findRegistration_department(RegisterNode *head, const char *department)`
+      * **功能**: 通过科室查找挂号记录。
+  * `RegisterNode *findRegistration_date(RegisterNode *head, const char *date)`
+      * **功能**: 通过日期查找挂号记录。
+  * `RegisterNode *delete_registration(RegisterNode *head, const char *patientName, const char *date)`
+      * **功能**: 删除挂号记录。
 
 ### 6. 费用管理模块 (Bill)
 
@@ -272,6 +302,16 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
     * `double calculate_total_bill(BillNode *head, const char *patientName)`
         * **功能**: 结算。
         * **实现**: 遍历费用链表，筛选出该患者的所有费用记录，累加 `amount` 字段并返回总额。
+  * `BillNode *findBill_patient(BillNode *head, const char *patientName)`
+      * **功能**: 通过患者姓名查找费用记录。
+  * `BillNode *findBill_item(BillNode *head, const char *itemName)`
+      * **功能**: 通过收费项目查找费用记录。
+  * `BillNode *modify_bill(BillNode *head, const char *patientName, const char *itemName, BillNode newInfo)`
+      * **功能**: 修改费用记录。
+  * `BillNode *delete_bill(BillNode *head, const char *patientName, const char *itemName)`
+      * **功能**: 删除费用记录。
+  * `BillNode *sort_bills_by_amount(BillNode *head)`
+      * **功能**: 按金额升序排序费用链表。
 
 ### 7. 数据持久化模块 (File IO)
 
@@ -286,6 +326,56 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
         * **功能**: 从文件中读取数据重建链表。
         * **实现**: 使用 `fopen` 打开文件（读模式），循环使用 `fscanf` 读取数据，调用 `make_xxx` 和 `add_xxx`
           函数将读取的数据构建成链表，直到文件结束。
+
+### 8. 用户界面模块 (UI)
+
+该模块负责处理所有与用户的交互，使用 `ncurses` 库构建终端图形界面。
+
+* **核心控制与通用组件**:
+    * `int ui_init(void)`
+        * **功能**: 初始化 ncurses 环境，配置颜色对、键盘模式等。
+    * `void ui_cleanup(void)`
+        * **功能**: 退出 ncurses 模式，恢复终端设置。
+    * `int ui_main(void)`
+        * **功能**: UI 模块入口，负责调度登录界面和主界面。
+    * `int ui_login_screen(void)`
+        * **功能**: 显示登录框，调用 Auth 模块验证用户身份。
+    * `void ui_main_screen(int role)`
+        * **功能**: 根据登录用户的角色（管理员/医生/患者）显示不同的主菜单和侧边栏。
+    * `void ui_show_message(const char *title, const char *message, int type)`
+        * **功能**: 显示通用消息弹窗（成功/错误/警告）。
+    * `int ui_confirm_dialog(const char *title, const char *message)`
+        * **功能**: 显示 Yes/No 确认对话框。
+    * `int ui_input_string(...)` / `ui_input_int(...)` / `ui_input_double(...)`
+        * **功能**: 封装的输入函数，支持在指定窗口位置获取各种类型的输入。
+
+* **业务管理界面 (通用/管理员)**:
+    * `void ui_patient_management(WINDOW *win)`
+        * **功能**: 患者信息的列表展示、分页、选中交互。
+    * `void ui_doctor_management(WINDOW *win)`
+        * **功能**: 医生信息管理界面。
+    * `void ui_drug_management(WINDOW *win)`
+        * **功能**: 药品库存管理界面。
+    * `void ui_registration_management(WINDOW *win)`
+        * **功能**: 挂号记录管理界面。
+    * `void ui_bill_management(WINDOW *win)`
+        * **功能**: 费用记录管理界面。
+    * `void ui_user_management(WINDOW *win)`
+        * **功能**: 系统用户账号管理界面（仅管理员）。
+    * **配套表单与菜单**: 包含各模块的添加表单 (`ui_add_xxx_form`)、修改表单 (`ui_modify_xxx_form`)、查询菜单 (
+      `ui_search_xxx`) 和排序菜单 (`ui_sort_xxx_menu`)。
+
+* **特定角色功能**:
+    * **患者端**:
+        * `ui_patient_main_screen()`: 患者专属主屏幕。
+        * `ui_patient_register()`: 患者自助挂号界面。
+        * `ui_patient_view_registrations()`: 查看个人挂号记录。
+        * `ui_patient_view_bills()`: 查看个人费用详情。
+    * **医生端**:
+        * `ui_doctor_main_screen()`: 医生专属主屏幕。
+        * `ui_doctor_patient_management()`: 管理挂号到该医生的患者。
+        * `ui_doctor_registration_management()`: 查看待诊列表。
+        * `ui_doctor_bill_management()`: 为患者开具费用单。
 
 ---
 
