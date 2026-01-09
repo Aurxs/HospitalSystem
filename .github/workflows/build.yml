@@ -45,17 +45,17 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake -S . -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=. -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
       # --- Configure CMake (Non-Windows) ---
       - name: Configure CMake (Non-Windows)
         if: runner.os != 'Windows'
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=.
 
       # --- Build ---
       - name: Build
-        run: cmake --build build --config Release --target HospitalSystem
+        run: cmake --build . --config Release --target HospitalSystem
 
       # --- Upload Artifacts ---
       - name: Upload Artifacts
@@ -63,9 +63,8 @@ jobs:
         with:
           name: HospitalSystem-${{ matrix.os }}
           path: |
-            build/HospitalSystem
-            build/HospitalSystem.exe
-            build/Release/HospitalSystem.exe
-            build/Release/*.dll
+            HospitalSystem
+            HospitalSystem.exe
+            *.dll
             data
           if-no-files-found: ignore
