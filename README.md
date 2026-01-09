@@ -1,6 +1,141 @@
 # 医院管理系统 (Hospital Management System)
 
-## 一、 项目总体设计
+## 一、 编译与运行指南
+
+本项目支持 Windows、macOS 和 Linux 平台。推荐使用 CMake 进行构建，也可以直接使用 GCC 编译。
+
+### 1. 环境准备
+
+在编译之前，请确保已安装 C 编译器（GCC 或 Clang）以及 `ncurses` 图形库。
+
+* **Linux (Ubuntu/Debian)**:
+
+  ```bash
+  sudo apt-get install build-essential libncurses5-dev libncursesw5-dev cmake
+  ```
+
+* **macOS**:
+  macOS 通常预装了 ncurses 库，建议安装 Xcode Command Line Tools 和 CMake。
+
+  ```bash
+  xcode-select --install
+  brew install cmake
+  ```
+
+* **Windows (详细步骤)**:
+  Windows 系统默认没有 curses 库，强烈推荐使用 `vcpkg` 包管理器安装 `pdcurses`。
+
+    1. **安装 vcpkg**:
+       打开 PowerShell 或 CMD，执行以下命令下载并配置 vcpkg：
+
+       ```cmd
+       git clone https://github.com/microsoft/vcpkg.git
+       cd vcpkg
+       .\bootstrap-vcpkg.bat
+       ```
+
+    2. **安装依赖包**:
+
+       ```cmd
+       .\vcpkg install pdcurses:x64-windows
+       ```
+
+    3. **编译运行**:
+       回到本项目目录，创建 build 文件夹并配置 CMake（注意替换 `[path/to/vcpkg]` 为实际 vcpkg 的安装路径）：
+
+       ```cmd
+       mkdir build
+       cd build
+       cmake .. "-DCMAKE_TOOLCHAIN_FILE=[path/to/vcpkg]/scripts/buildsystems/vcpkg.cmake"
+       cmake --build .
+       ```
+
+       编译完成后，在 Debug 目录下运行 `HospitalSystem.exe`。
+
+### 2. 使用 CMake 编译 (推荐)
+
+CMake 是一个跨平台的构建工具，能够自动处理依赖关系和编译选项。
+
+**步骤：**
+
+1. 在项目根目录下创建一个构建文件夹：
+
+   ```bash
+   mkdir build
+   cd build
+   ```
+
+2. 生成 Makefile 或项目文件：
+
+   ```bash
+   cmake ..
+   ```
+
+3. 编译项目：
+
+   ```bash
+   cmake --build .
+   ```
+
+4. 运行生成的程序：
+
+    * Linux/macOS: `./HospitalSystem`
+    * Windows: `HospitalSystem.exe`
+
+### 3. 使用 GCC 直接编译
+
+#### Linux / macOS (ncurses)
+
+Linux 或 macOS 用户通常可以直接使用系统自带的 ncurses 库。
+
+**命令：**
+
+```bash
+gcc -o hospital main.c src/*.c -Iinclude -lncurses
+```
+
+*(注：如果遇到宽字符乱码问题，尝试链接 `ncursesw`：`-lncursesw`)*
+
+#### Windows (MinGW + PDCurses)
+
+Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
+
+1. **准备环境**:
+
+    * 确保已安装 MinGW-w64。
+    * 下载 [PDCurses](https://github.com/wmcbrine/PDCurses) 源码并编译，或者下载预编译好的 `pdcurses.a` 和 `curses.h`。
+
+2. **放置文件**:
+
+    * 将 `curses.h` 放到项目的 `include` 文件夹中（或者单独放在一个文件夹并在编译时通过 `-I` 指定）。
+    * 将 `pdcurses.a` 放到项目根目录（或新建 `lib` 目录）。
+
+3. **编译命令**:
+   打开终端（CMD/PowerShell），在项目根目录下执行（假设 `pdcurses.a` 在当前目录）：
+
+   ```cmd
+   gcc -o hospital.exe main.c src/*.c -Iinclude -L. -lpdcurses
+   ```
+
+**通用参数说明：**
+
+* `-o hospital`: 指定输出文件名。
+* `main.c src/*.c`: 编译所有源文件。
+* `-Iinclude`: 指定头文件搜索路径。
+* `-L.`: (Windows) 指定库文件搜索路径为当前目录。
+* `-lpdcurses`: (Windows) 链接库名为 `pdcurses` 的库文件。
+* `-lncurses`: (Linux/Mac) 链接 ncurses 库。
+
+**运行：**
+
+```bash
+./hospital      # Linux/macOS
+.\hospital.exe  # Windows
+```
+
+---
+
+## 二、 项目总体设计
 
 本系统是一个基于 C 语言开发的医院管理系统，旨在模拟医院的日常业务流程。系统采用模块化设计思想，将不同的业务逻辑分离，便于维护和扩展。用户界面（UI）部分使用了
 `ncurses` 库，在终端中实现了图形化的交互体验。
@@ -36,7 +171,7 @@
 
 ---
 
-## 二、 详细设计流程
+## 三、 详细设计流程
 
 本部分将详细介绍每个模块的功能设计、核心函数及其实现方法。
 
@@ -154,7 +289,7 @@
 
 ---
 
-## 三、 公有数据结构
+## 四、 公有数据结构
 
 系统使用链表作为主要的数据结构来存储各类信息。所有数据结构定义在 `include/datastruct.h` 中。
 
