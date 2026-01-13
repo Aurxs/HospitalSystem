@@ -133,6 +133,9 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
 .\hospital.exe  # Windows
 ```
 
+你也可以直接在Actions界面获取已经编译好的文件进行测试
+
+
 ---
 
 ## 二、 项目总体设计
