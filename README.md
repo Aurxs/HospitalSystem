@@ -152,6 +152,9 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
 当前示例患者用户名（与 `data/patients.txt` 一致）：
 `张三`、`李四`、`王五`、`赵六`、`钱七`、`孙八`、`周九`、`吴十`、`郑十一`、`冯十二`、`陈十三`。
 
+你可以直接在Actions界面获取已经编译好的文件进行测试
+
+
 ---
 
 ## 二、 项目总体设计
@@ -488,3 +491,4 @@ typedef struct AuthNode {
     struct AuthNode* next;      // 指向下一个用户节点的指针
 } AuthNode;
 ```
+
