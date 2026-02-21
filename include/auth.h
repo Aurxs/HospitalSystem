@@ -3,8 +3,6 @@
 
 #include "datastruct.h"
 
-#define XOR_KEY 0xAA
-
 /**
  *功能：构建一个用户节点
  *参数：username - 用户名
@@ -56,7 +54,7 @@ AuthNode *find_user(AuthNode *head, const char *username);
 int authenticate_user(AuthNode *head, const char *username, const char *password);
 
 /**
- * 功能：异或加密/解密
+ * 功能：对密码做不可逆摘要（兼容旧数据时会在认证中处理）
  * 参数：input - 输入字符串
  *       output - 输出缓冲区（至少 MAX_NAME 大小）
  */

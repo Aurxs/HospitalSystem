@@ -25,6 +25,7 @@ int pass_count_file_io = 0;
 #define TEST_DRUG_FILE "/tmp/test_drugs.dat"
 #define TEST_REGISTRATION_FILE "/tmp/test_registrations.dat"
 #define TEST_BILL_FILE "/tmp/test_bills.dat"
+#define TEST_AUTH_FILE "/tmp/test_auth.dat"
 
 void test_save_load_patients() {
     printf("测试 save_patients/load_patients 函数...\n");
@@ -253,6 +254,30 @@ void test_save_load_bills() {
     printf("✓ save_bills/load_bills 测试通过\n\n");
 }
 
+void test_load_bills_invalid_amount() {
+    printf("测试 load_bills 非法金额过滤...\n");
+    test_count_file_io++;
+
+    FILE *fp = fopen(TEST_BILL_FILE, "w");
+    assert(fp != NULL);
+    fprintf(fp, "张三|挂号费|-10\n");
+    fprintf(fp, "李四|检查费|abc\n");
+    fprintf(fp, "王五|药费|88.5\n");
+    fclose(fp);
+
+    BillNode *loadedHead = load_bills(TEST_BILL_FILE);
+    assert(loadedHead != NULL);
+    assert(strcmp(loadedHead->patientName, "王五") == 0);
+    assert(fabs(loadedHead->amount - 88.5) < 0.01);
+    assert(loadedHead->next == NULL);
+
+    free_bill_list(loadedHead);
+    remove(TEST_BILL_FILE);
+
+    pass_count_file_io++;
+    printf("✓ load_bills 非法金额过滤测试通过\n\n");
+}
+
 void test_load_nonexistent_file() {
     printf("测试 加载不存在的文件...\n");
     test_count_file_io++;
@@ -289,7 +314,6 @@ void test_save_load_users() {
     add_user(&head, u2);
 
     // 保存到文件
-    #define TEST_AUTH_FILE "/tmp/test_auth.dat"
     int result = save_users(TEST_AUTH_FILE, head);
     assert(result == 1);
 
@@ -325,6 +349,39 @@ void test_save_load_users() {
     printf("✓ save_users/load_users 测试通过\n\n");
 }
 
+void test_load_users_invalid_role() {
+    printf("测试 load_users 非法角色降级...\n");
+    test_count_file_io++;
+
+    FILE *fp = fopen(TEST_AUTH_FILE, "w");
+    assert(fp != NULL);
+    fprintf(fp, "hacker|h2$1234567890abcdef1234567890abcdef|99\n");
+    fprintf(fp, "unknown|h2$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|abc\n");
+    fprintf(fp, "doctor|h2$bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|1\n");
+    fclose(fp);
+
+    AuthNode *loadedHead = load_users(TEST_AUTH_FILE);
+    assert(loadedHead != NULL);
+
+    AuthNode *hacker = find_user(loadedHead, "hacker");
+    AuthNode *unknown = find_user(loadedHead, "unknown");
+    AuthNode *doctor = find_user(loadedHead, "doctor");
+    assert(hacker != NULL && hacker->role == 2);
+    assert(unknown != NULL && unknown->role == 2);
+    assert(doctor != NULL && doctor->role == 1);
+
+    while (loadedHead != NULL) {
+        AuthNode *temp = loadedHead;
+        loadedHead = loadedHead->next;
+        free(temp);
+    }
+
+    remove(TEST_AUTH_FILE);
+
+    pass_count_file_io++;
+    printf("✓ load_users 非法角色降级测试通过\n\n");
+}
+
 void run_file_io_tests() {
     printf("========== 文件读写模块测试 ==========\n\n");
 
@@ -333,7 +390,9 @@ void run_file_io_tests() {
     test_save_load_drugs();
     test_save_load_registrations();
     test_save_load_bills();
+    test_load_bills_invalid_amount();
     test_save_load_users();
+    test_load_users_invalid_role();
     test_load_nonexistent_file();
 
     printf("========================================\n");

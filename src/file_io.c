@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <limits.h>
+#include <math.h>
 #include "../include/datastruct.h"
 #include "../include/file_io.h"
 
@@ -13,6 +16,72 @@
 #include "../include/drug.h"
 #include "../include/registration.h"
 #include "../include/bill.h"
+
+#if !defined(_WIN32) && !defined(WIN32)
+#include <sys/stat.h>
+#endif
+
+static void sanitize_field(const char *src, char *dst, size_t dst_size) {
+    size_t i = 0;
+
+    if (dst == NULL || dst_size == 0) {
+        return;
+    }
+    if (src == NULL) {
+        dst[0] = '\0';
+        return;
+    }
+
+    while (src[i] != '\0' && i < dst_size - 1) {
+        char c = src[i];
+        if (c == '|' || c == '\r' || c == '\n') {
+            c = ' ';
+        }
+        dst[i] = c;
+        i++;
+    }
+    dst[i] = '\0';
+}
+
+static int parse_int_strict(const char *text, int *out_value) {
+    char *endptr = NULL;
+    long value;
+
+    if (text == NULL || out_value == NULL || text[0] == '\0') {
+        return 0;
+    }
+
+    errno = 0;
+    value = strtol(text, &endptr, 10);
+    if (errno != 0 || *endptr != '\0' || value < INT_MIN || value > INT_MAX) {
+        return 0;
+    }
+
+    *out_value = (int) value;
+    return 1;
+}
+
+static int parse_double_strict(const char *text, double *out_value) {
+    char *endptr = NULL;
+    double value;
+
+    if (text == NULL || out_value == NULL || text[0] == '\0') {
+        return 0;
+    }
+
+    errno = 0;
+    value = strtod(text, &endptr);
+    if (errno != 0 || *endptr != '\0' || !isfinite(value)) {
+        return 0;
+    }
+
+    *out_value = value;
+    return 1;
+}
+
+static int is_valid_role(int role) {
+    return role >= 0 && role <= 2;
+}
 
 // ================== 患者数据保存与读取 ==================
 
@@ -26,13 +95,21 @@ int save_patients(const char *filename, PatientNode *head) {
 
     PatientNode *current = head;
     while (current != NULL) {
+        char name[MAX_NAME], gender[MAX_GENDER], phone[MAX_PHONE];
+        char diagnosis[MAX_DESC], treatment[MAX_DESC];
+        sanitize_field(current->name, name, sizeof(name));
+        sanitize_field(current->gender, gender, sizeof(gender));
+        sanitize_field(current->phone, phone, sizeof(phone));
+        sanitize_field(current->diagnosis, diagnosis, sizeof(diagnosis));
+        sanitize_field(current->treatment, treatment, sizeof(treatment));
+
         fprintf(fp, "%s|%d|%s|%s|%s|%s\n",
-                current->name,
+                name,
                 current->age,
-                current->gender,
-                current->phone,
-                current->diagnosis,
-                current->treatment);
+                gender,
+                phone,
+                diagnosis,
+                treatment);
         current = current->next;
     }
 
@@ -66,7 +143,7 @@ PatientNode *load_patients(const char *filename) {
 
         token = strtok(NULL, "|");
         if (token == NULL) continue;
-        age = atoi(token);
+        if (!parse_int_strict(token, &age) || age < 0 || age > 150) continue;
 
         token = strtok(NULL, "|");
         if (token == NULL) continue;
@@ -108,13 +185,20 @@ int save_doctors(const char *filename, DoctorNode *head) {
 
     DoctorNode *current = head;
     while (current != NULL) {
+        char name[MAX_NAME], gender[MAX_GENDER], department[MAX_DEPT], phone[MAX_PHONE], schedule[MAX_DESC];
+        sanitize_field(current->name, name, sizeof(name));
+        sanitize_field(current->gender, gender, sizeof(gender));
+        sanitize_field(current->department, department, sizeof(department));
+        sanitize_field(current->phone, phone, sizeof(phone));
+        sanitize_field(current->schedule, schedule, sizeof(schedule));
+
         fprintf(fp, "%s|%d|%s|%s|%s|%s\n",
-                current->name,
+                name,
                 current->age,
-                current->gender,
-                current->department,
-                current->phone,
-                current->schedule);
+                gender,
+                department,
+                phone,
+                schedule);
         current = current->next;
     }
 
@@ -150,7 +234,7 @@ DoctorNode *load_doctors(const char *filename) {
 
         token = strtok(NULL, "|");
         if (token == NULL) continue;
-        age = atoi(token);
+        if (!parse_int_strict(token, &age) || age < 0 || age > 150) continue;
 
         token = strtok(NULL, "|");
         if (token == NULL) continue;
@@ -194,10 +278,15 @@ int save_drugs(const char *filename, DrugNode *head) {
 
     DrugNode *current = head;
     while (current != NULL) {
+        char name[MAX_NAME], spec[MAX_DEPT], factory[MAX_NAME];
+        sanitize_field(current->name, name, sizeof(name));
+        sanitize_field(current->spec, spec, sizeof(spec));
+        sanitize_field(current->factory, factory, sizeof(factory));
+
         fprintf(fp, "%s|%s|%s|%.2f|%d\n",
-                current->name,
-                current->spec,
-                current->factory,
+                name,
+                spec,
+                factory,
                 current->price,
                 current->stock);
         current = current->next;
@@ -243,11 +332,11 @@ DrugNode *load_drugs(const char *filename) {
 
         token = strtok(NULL, "|");
         if (token == NULL) continue;
-        price = atof(token);
+        if (!parse_double_strict(token, &price) || price < 0.0) continue;
 
         token = strtok(NULL, "|");
         if (token == NULL) continue;
-        stock = atoi(token);
+        if (!parse_int_strict(token, &stock) || stock < 0) continue;
 
         DrugNode d = make_drug(name, spec, factory, price, stock);
         add_drug(&head, d);
@@ -269,11 +358,17 @@ int save_registrations(const char *filename, RegisterNode *head) {
 
     RegisterNode *current = head;
     while (current != NULL) {
+        char patientName[MAX_NAME], doctorName[MAX_NAME], department[MAX_DEPT], date[MAX_NAME];
+        sanitize_field(current->patientName, patientName, sizeof(patientName));
+        sanitize_field(current->doctorName, doctorName, sizeof(doctorName));
+        sanitize_field(current->department, department, sizeof(department));
+        sanitize_field(current->date, date, sizeof(date));
+
         fprintf(fp, "%s|%s|%s|%s\n",
-                current->patientName,
-                current->doctorName,
-                current->department,
-                current->date);
+                patientName,
+                doctorName,
+                department,
+                date);
         current = current->next;
     }
 
@@ -338,9 +433,13 @@ int save_bills(const char *filename, BillNode *head) {
 
     BillNode *current = head;
     while (current != NULL) {
+        char patientName[MAX_NAME], itemName[MAX_NAME];
+        sanitize_field(current->patientName, patientName, sizeof(patientName));
+        sanitize_field(current->itemName, itemName, sizeof(itemName));
+
         fprintf(fp, "%s|%s|%.2f\n",
-                current->patientName,
-                current->itemName,
+                patientName,
+                itemName,
                 current->amount);
         current = current->next;
     }
@@ -379,7 +478,7 @@ BillNode *load_bills(const char *filename) {
 
         token = strtok(NULL, "|");
         if (token == NULL) continue;
-        amount = atof(token);
+        if (!parse_double_strict(token, &amount) || amount < 0.0) continue;
 
         BillNode b = make_bill(patientName, itemName, amount);
         add_bill(&head, b);
@@ -400,13 +499,25 @@ int save_users(const char *filename, AuthNode *head) {
     }
     AuthNode *current = head;
     while (current != NULL) {
+        char username[MAX_NAME], password[MAX_NAME];
+        sanitize_field(current->username, username, sizeof(username));
+        sanitize_field(current->password, password, sizeof(password));
+
         fprintf(fp, "%s|%s|%d\n",
-                current->username,
-                current->password,
+                username,
+                password,
                 current->role);
         current = current->next;
     }
-    fclose(fp);
+
+    if (fclose(fp) != 0) {
+        return 0;
+    }
+
+#if !defined(_WIN32) && !defined(WIN32)
+    (void) chmod(filename, S_IRUSR | S_IWUSR);
+#endif
+
     return 1;
 }
 
@@ -434,19 +545,30 @@ AuthNode *load_users(const char *filename) {
         if (token == NULL) continue;
         strncpy(password, token, MAX_NAME - 1);
         password[MAX_NAME - 1] = '\0';
-        
+
         // 读取角色字段（重要！）
         token = strtok(NULL, "|");
         if (token != NULL) {
-            role = atoi(token);
+            int parsed_role = 2;
+            if (parse_int_strict(token, &parsed_role) && is_valid_role(parsed_role)) {
+                role = parsed_role;
+            } else {
+                role = 2;
+            }
         }
 
         // 直接构造节点，避免 make_user 再次加密
         AuthNode a;
+        char clean_username[MAX_NAME];
+        char clean_password[MAX_NAME];
         memset(&a, 0, sizeof(AuthNode));
-        strncpy(a.username, username, MAX_NAME - 1);
-        strncpy(a.password, password, MAX_NAME - 1);
-        a.role = role;  // 设置角色
+        sanitize_field(username, clean_username, sizeof(clean_username));
+        sanitize_field(password, clean_password, sizeof(clean_password));
+        strncpy(a.username, clean_username, MAX_NAME - 1);
+        a.username[MAX_NAME - 1] = '\0';
+        strncpy(a.password, clean_password, MAX_NAME - 1);
+        a.password[MAX_NAME - 1] = '\0';
+        a.role = is_valid_role(role) ? role : 2; // 设置角色
         a.next = NULL;
 
         add_user(&head, a);

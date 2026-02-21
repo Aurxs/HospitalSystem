@@ -7,6 +7,17 @@
 #include "../include/datastruct.h"
 #include "../include/bill.h"
 
+static void copy_bill_fields(BillNode *dst, const BillNode *src) {
+    if (dst == NULL || src == NULL) {
+        return;
+    }
+    strncpy(dst->patientName, src->patientName, MAX_NAME - 1);
+    dst->patientName[MAX_NAME - 1] = '\0';
+    strncpy(dst->itemName, src->itemName, MAX_NAME - 1);
+    dst->itemName[MAX_NAME - 1] = '\0';
+    dst->amount = src->amount;
+}
+
 // 工具: 构造一个费用记录（按值返回，便于直接传给 add_bill）
 BillNode make_bill(const char *patientName, const char *itemName, double amount) {
     BillNode b;
@@ -27,9 +38,7 @@ BillNode *add_bill(BillNode **head, const BillNode newInfo) {
     }
 
     // 将新数据填入临时结构体newNode
-    strcpy(newNode->patientName, newInfo.patientName);
-    strcpy(newNode->itemName, newInfo.itemName);
-    newNode->amount = newInfo.amount;
+    copy_bill_fields(newNode, &newInfo);
 
     newNode->next = NULL;
 
@@ -92,9 +101,7 @@ BillNode *modify_bill(BillNode *head, const char *patientName, const char *itemN
         if (strcmp(current->patientName, patientName) == 0 &&
             strcmp(current->itemName, itemName) == 0) {
             // 更新各个字段
-            strcpy(current->patientName, newInfo.patientName);
-            strcpy(current->itemName, newInfo.itemName);
-            current->amount = newInfo.amount;
+            copy_bill_fields(current, &newInfo);
             return current; // 返回修改后的节点指针
         }
         current = current->next; // 继续下一个节点
@@ -184,4 +191,3 @@ BillNode *sort_bills_by_amount(BillNode *head) {
 
     return dummy.next; // 返回排序后的头指针
 }
-

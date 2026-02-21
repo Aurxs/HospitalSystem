@@ -7,6 +7,20 @@
 #include "../include/datastruct.h"
 #include "../include/registration.h"
 
+static void copy_registration_fields(RegisterNode *dst, const RegisterNode *src) {
+    if (dst == NULL || src == NULL) {
+        return;
+    }
+    strncpy(dst->patientName, src->patientName, MAX_NAME - 1);
+    dst->patientName[MAX_NAME - 1] = '\0';
+    strncpy(dst->doctorName, src->doctorName, MAX_NAME - 1);
+    dst->doctorName[MAX_NAME - 1] = '\0';
+    strncpy(dst->department, src->department, MAX_DEPT - 1);
+    dst->department[MAX_DEPT - 1] = '\0';
+    strncpy(dst->date, src->date, MAX_NAME - 1);
+    dst->date[MAX_NAME - 1] = '\0';
+}
+
 // 工具: 构造一个挂号记录（按值返回，便于直接传给 add_registration）
 RegisterNode make_registration(const char *patientName, const char *doctorName,
                                const char *department, const char *date) {
@@ -29,10 +43,7 @@ RegisterNode *add_registration(RegisterNode **head, const RegisterNode newInfo) 
     }
 
     // 将新数据填入临时结构体newNode
-    strcpy(newNode->patientName, newInfo.patientName);
-    strcpy(newNode->doctorName, newInfo.doctorName);
-    strcpy(newNode->department, newInfo.department);
-    strcpy(newNode->date, newInfo.date);
+    copy_registration_fields(newNode, &newInfo);
 
     newNode->next = NULL;
 

@@ -4,6 +4,23 @@
 #include "../include/datastruct.h"
 #include "../include/patient.h"
 
+static void copy_patient_fields(PatientNode *dst, const PatientNode *src) {
+    if (dst == NULL || src == NULL) {
+        return;
+    }
+    strncpy(dst->name, src->name, MAX_NAME - 1);
+    dst->name[MAX_NAME - 1] = '\0';
+    dst->age = src->age;
+    strncpy(dst->gender, src->gender, MAX_GENDER - 1);
+    dst->gender[MAX_GENDER - 1] = '\0';
+    strncpy(dst->phone, src->phone, MAX_PHONE - 1);
+    dst->phone[MAX_PHONE - 1] = '\0';
+    strncpy(dst->diagnosis, src->diagnosis, MAX_DESC - 1);
+    dst->diagnosis[MAX_DESC - 1] = '\0';
+    strncpy(dst->treatment, src->treatment, MAX_DESC - 1);
+    dst->treatment[MAX_DESC - 1] = '\0';
+}
+
 // 工具: 构造一个患者记录（按值返回，便于直接传给 addPatient/modifyPatient）
 PatientNode make_patient(const char *name, int age, const char *gender,
                          const char *phone, const char *diagnosis, const char *treatment) {
@@ -28,12 +45,7 @@ PatientNode *add_patient(PatientNode **head, const PatientNode newInfo) {
     }
 
     //将新数据填入临时结构体newNode
-    strcpy(newNode->name, newInfo.name);
-    newNode->age = newInfo.age;
-    strcpy(newNode->gender, newInfo.gender);
-    strcpy(newNode->phone, newInfo.phone);
-    strcpy(newNode->diagnosis, newInfo.diagnosis);
-    strcpy(newNode->treatment, newInfo.treatment);
+    copy_patient_fields(newNode, &newInfo);
 
     newNode->next = NULL;
 
@@ -82,12 +94,7 @@ PatientNode *modify_patient(PatientNode *head, const char *phone, const PatientN
     while (current != NULL) {
         if (strcmp(current->phone, phone) == 0) {
             // 更新各个字段
-            strcpy(current->name, newInfo.name);
-            current->age = newInfo.age;
-            strcpy(current->gender, newInfo.gender);
-            strcpy(current->phone, newInfo.phone);
-            strcpy(current->diagnosis, newInfo.diagnosis);
-            strcpy(current->treatment, newInfo.treatment);
+            copy_patient_fields(current, &newInfo);
             return current; // 返回修改后的节点指针
         }
         current = current->next; // 继续下一个节点

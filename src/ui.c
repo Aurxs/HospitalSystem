@@ -19,6 +19,8 @@
 #include <ctype.h>      /* 字符处理函数 */
 #include <sys/stat.h>   /* mkdir函数 */
 #include <errno.h>      /* errno */
+#include <limits.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -58,6 +60,102 @@ static char DATA_PATH_REGISTRATIONS[1024] = ""; /* 挂号数据文件路径 */
 static char DATA_PATH_BILLS[1024] = ""; /* 费用数据文件路径 */
 static char DATA_PATH_USERS[1024] = ""; /* 用户数据文件路径 */
 
+/* 前置声明：该函数在医生模块区域定义，这里用于输入校验逻辑 */
+static int is_patient_of_doctor(const char *patient_name, const char *doctor_name);
+
+static int normalize_role(int role) {
+    if (role < ROLE_ADMIN || role > ROLE_PATIENT) {
+        return ROLE_PATIENT;
+    }
+    return role;
+}
+
+static int parse_int_in_range(const char *text, int min_value, int max_value, int *out_value) {
+    char *endptr = NULL;
+    long value;
+
+    if (text == NULL || out_value == NULL || text[0] == '\0') {
+        return 0;
+    }
+
+    errno = 0;
+    value = strtol(text, &endptr, 10);
+    if (errno != 0 || *endptr != '\0' || value < min_value || value > max_value) {
+        return 0;
+    }
+
+    *out_value = (int) value;
+    return 1;
+}
+
+static int parse_non_negative_double(const char *text, double *out_value) {
+    char *endptr = NULL;
+    double value;
+
+    if (text == NULL || out_value == NULL || text[0] == '\0') {
+        return 0;
+    }
+
+    errno = 0;
+    value = strtod(text, &endptr);
+    if (errno != 0 || *endptr != '\0' || value < 0.0) {
+        return 0;
+    }
+
+    *out_value = value;
+    return 1;
+}
+
+static void generate_initial_admin_password(char *output, size_t output_size) {
+    static const char charset[] = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+    const size_t charset_len = sizeof(charset) - 1;
+    size_t i;
+    size_t target_len;
+
+    if (output == NULL || output_size < 2) {
+        return;
+    }
+
+    target_len = output_size - 1;
+    if (target_len > 14) {
+        target_len = 14;
+    }
+
+#if !defined(_WIN32) && !defined(WIN32)
+    {
+        FILE *rand_fp = fopen("/dev/urandom", "rb");
+        if (rand_fp != NULL) {
+            for (i = 0; i < target_len; i++) {
+                unsigned char byte = 0;
+                if (fread(&byte, 1, 1, rand_fp) != 1) {
+                    break;
+                }
+                output[i] = charset[(size_t) (byte % charset_len)];
+            }
+            fclose(rand_fp);
+            if (i == target_len) {
+                output[target_len] = '\0';
+                return;
+            }
+        }
+    }
+#endif
+
+    {
+        unsigned int seed = (unsigned int) time(NULL);
+#if defined(_WIN32) || defined(WIN32)
+        seed ^= (unsigned int) GetTickCount();
+#else
+        seed ^= (unsigned int) getpid();
+#endif
+        srand(seed);
+    }
+    for (i = 0; i < target_len; i++) {
+        output[i] = charset[(size_t) (rand() % (int) charset_len)];
+    }
+    output[target_len] = '\0';
+}
+
 /*
  * 初始化数据目录路径 (跨平台兼容版)
  * 功能: 获取程序可执行文件所在目录，并设置data文件夹的相对路径
@@ -75,6 +173,7 @@ static void init_data_paths(void) {
         if (last_slash != NULL) {
             *last_slash = '\0';
             strncpy(exe_dir, exe_path, sizeof(exe_dir) - 1);
+            exe_dir[sizeof(exe_dir) - 1] = '\0';
         } else {
             _getcwd(exe_dir, sizeof(exe_dir));
         }
@@ -88,9 +187,11 @@ static void init_data_paths(void) {
         if (realpath(exe_path, real_path) != NULL) {
             char *dir = dirname(real_path);
             strncpy(exe_dir, dir, sizeof(exe_dir) - 1);
+            exe_dir[sizeof(exe_dir) - 1] = '\0';
         } else {
             char *dir = dirname(exe_path);
             strncpy(exe_dir, dir, sizeof(exe_dir) - 1);
+            exe_dir[sizeof(exe_dir) - 1] = '\0';
         }
     } else {
         getcwd(exe_dir, sizeof(exe_dir));
@@ -102,6 +203,7 @@ static void init_data_paths(void) {
         exe_path[len] = '\0';
         char *dir = dirname(exe_path);
         strncpy(exe_dir, dir, sizeof(exe_dir) - 1);
+        exe_dir[sizeof(exe_dir) - 1] = '\0';
     } else {
         getcwd(exe_dir, sizeof(exe_dir));
     }
@@ -118,6 +220,7 @@ static void init_data_paths(void) {
         if (MKDIR(g_data_dir) == -1 && errno != EEXIST) {
             /* 创建失败，回退到当前工作目录 */
             strncpy(g_data_dir, "data", sizeof(g_data_dir));
+            g_data_dir[sizeof(g_data_dir) - 1] = '\0';
             MKDIR(g_data_dir);
         }
     }
@@ -380,11 +483,17 @@ int ui_init(void) {
     g_bills = load_bills(DATA_PATH_BILLS);
     g_users = load_users(DATA_PATH_USERS);
 
-    /* 如果没有任何用户，创建默认管理员账户（用户名和密码都是admin） */
+    /* 如果没有任何用户，创建默认管理员账户并生成随机初始密码 */
     if (g_users == NULL) {
-        AuthNode admin = make_user("admin", "admin", ROLE_ADMIN);
+        char initial_password[32] = "";
+        char hint[128] = "";
+        generate_initial_admin_password(initial_password, sizeof(initial_password));
+        AuthNode admin = make_user("admin", initial_password, ROLE_ADMIN);
         add_user(&g_users, admin);
         save_users(DATA_PATH_USERS, g_users);
+        snprintf(hint, sizeof(hint), "首次启动已创建admin账号，初始密码: %s", initial_password);
+        ui_show_message("安全提示", hint, 5);
+        memset(initial_password, 0, sizeof(initial_password));
     }
 
     return 0;
@@ -691,6 +800,9 @@ int ui_input_string(WINDOW *win, int y, int x, char *buffer, int max_len, int hi
             }
         } else if (ch >= 32 && ch <= 126) {
             /* ASCII可打印字符 */
+            if (ch == '|' || ch == '\r' || ch == '\n') {
+                continue;
+            }
             if (pos < max_len - 1) {
                 buffer[pos] = (char) ch;
                 pos++;
@@ -964,6 +1076,11 @@ int ui_login_screen(void) {
                         if (authenticate_user(g_users, username, password)) {
                             /* 登录成功 */
                             g_current_user = find_user(g_users, username);
+                            if (g_current_user == NULL) {
+                                ui_show_message("错误", "登录状态异常，请重试", 2);
+                                break;
+                            }
+                            g_current_user->role = normalize_role(g_current_user->role);
                             delwin(login_win);
                             return g_current_user->role;
                         } else {
@@ -1367,7 +1484,11 @@ int ui_add_patient_form(WINDOW *parent_win) {
                     if (strlen(name) == 0 || strlen(phone) == 0) {
                         ui_show_message("错误", "姓名和电话为必填项", 2);
                     } else {
-                        int age = atoi(age_str);
+                        int age = 0;
+                        if (!parse_int_in_range(age_str, 0, 150, &age)) {
+                            ui_show_message("错误", "年龄必须是0-150的整数", 2);
+                            break;
+                        }
                         PatientNode p = make_patient(name, age, gender, phone, diagnosis, treatment);
                         add_patient(&g_patients, p);
                         save_patients(DATA_PATH_PATIENTS, g_patients);
@@ -1413,12 +1534,18 @@ int ui_modify_patient_form(WINDOW *parent_win, PatientNode *patient) {
     char old_phone[MAX_PHONE];
 
     strncpy(name, patient->name, MAX_NAME - 1);
+    name[MAX_NAME - 1] = '\0';
     snprintf(age_str, sizeof(age_str), "%d", patient->age);
     strncpy(gender, patient->gender, MAX_GENDER - 1);
+    gender[MAX_GENDER - 1] = '\0';
     strncpy(phone, patient->phone, MAX_PHONE - 1);
+    phone[MAX_PHONE - 1] = '\0';
     strncpy(old_phone, patient->phone, MAX_PHONE - 1);
+    old_phone[MAX_PHONE - 1] = '\0';
     strncpy(diagnosis, patient->diagnosis, MAX_DESC - 1);
+    diagnosis[MAX_DESC - 1] = '\0';
     strncpy(treatment, patient->treatment, MAX_DESC - 1);
+    treatment[MAX_DESC - 1] = '\0';
 
     int current_field = 0;
     int field_count = 7;
@@ -1519,7 +1646,11 @@ int ui_modify_patient_form(WINDOW *parent_win, PatientNode *patient) {
                     current_field++;
                     if (current_field > 6) current_field = 6;
                 } else {
-                    int age = atoi(age_str);
+                    int age = 0;
+                    if (!parse_int_in_range(age_str, 0, 150, &age)) {
+                        ui_show_message("错误", "年龄必须是0-150的整数", 2);
+                        break;
+                    }
                     PatientNode newInfo = make_patient(name, age, gender, phone, diagnosis, treatment);
                     modify_patient(g_patients, old_phone, newInfo);
                     save_patients(DATA_PATH_PATIENTS, g_patients);
@@ -1998,7 +2129,11 @@ int ui_add_doctor_form(WINDOW *parent_win) {
                     if (strlen(name) == 0 || strlen(phone) == 0) {
                         ui_show_message("错误", "姓名和电话为必填项", 2);
                     } else {
-                        int age = atoi(age_str);
+                        int age = 0;
+                        if (!parse_int_in_range(age_str, 0, 150, &age)) {
+                            ui_show_message("错误", "年龄必须是0-150的整数", 2);
+                            break;
+                        }
                         DoctorNode d = make_doctor(name, age, gender, department, phone, schedule);
                         add_doctor(&g_doctors, d);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
@@ -2038,12 +2173,18 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
     char schedule[MAX_DESC];
 
     strncpy(name, doctor->name, MAX_NAME - 1);
+    name[MAX_NAME - 1] = '\0';
     snprintf(age_str, sizeof(age_str), "%d", doctor->age);
     strncpy(gender, doctor->gender, MAX_GENDER - 1);
+    gender[MAX_GENDER - 1] = '\0';
     strncpy(department, doctor->department, MAX_DEPT - 1);
+    department[MAX_DEPT - 1] = '\0';
     strncpy(phone, doctor->phone, MAX_PHONE - 1);
+    phone[MAX_PHONE - 1] = '\0';
     strncpy(old_phone, doctor->phone, MAX_PHONE - 1);
+    old_phone[MAX_PHONE - 1] = '\0';
     strncpy(schedule, doctor->schedule, MAX_DESC - 1);
+    schedule[MAX_DESC - 1] = '\0';
 
     int current_field = 0;
     int field_count = 7;
@@ -2141,7 +2282,11 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                     }
                     current_field++;
                 } else {
-                    int age = atoi(age_str);
+                    int age = 0;
+                    if (!parse_int_in_range(age_str, 0, 150, &age)) {
+                        ui_show_message("错误", "年龄必须是0-150的整数", 2);
+                        break;
+                    }
                     DoctorNode newInfo = make_doctor(name, age, gender, department, phone, schedule);
                     modify_doctor(g_doctors, old_phone, newInfo);
                     save_doctors(DATA_PATH_DOCTORS, g_doctors);
@@ -2521,8 +2666,16 @@ int ui_add_drug_form(WINDOW *parent_win) {
                     if (strlen(name) == 0) {
                         ui_show_message("错误", "药品名称为必填项", 2);
                     } else {
-                        double price = atof(price_str);
-                        int stock = atoi(stock_str);
+                        double price = 0.0;
+                        int stock = 0;
+                        if (!parse_non_negative_double(price_str, &price)) {
+                            ui_show_message("错误", "价格必须是非负数字", 2);
+                            break;
+                        }
+                        if (!parse_int_in_range(stock_str, 0, INT_MAX, &stock)) {
+                            ui_show_message("错误", "库存必须是非负整数", 2);
+                            break;
+                        }
                         DrugNode d = make_drug(name, spec, factory, price, stock);
                         add_drug(&g_drugs, d);
                         save_drugs(DATA_PATH_DRUGS, g_drugs);
@@ -2549,9 +2702,13 @@ int ui_modify_drug_form(WINDOW *parent_win, DrugNode *drug) {
 
     char name[MAX_NAME], spec[MAX_DEPT], factory[MAX_NAME], price_str[20], stock_str[10], old_name[MAX_NAME];
     strncpy(name, drug->name, MAX_NAME - 1);
+    name[MAX_NAME - 1] = '\0';
     strncpy(old_name, drug->name, MAX_NAME - 1);
+    old_name[MAX_NAME - 1] = '\0';
     strncpy(spec, drug->spec, MAX_DEPT - 1);
+    spec[MAX_DEPT - 1] = '\0';
     strncpy(factory, drug->factory, MAX_NAME - 1);
+    factory[MAX_NAME - 1] = '\0';
     snprintf(price_str, sizeof(price_str), "%.2f", drug->price);
     snprintf(stock_str, sizeof(stock_str), "%d", drug->stock);
 
@@ -2631,8 +2788,16 @@ int ui_modify_drug_form(WINDOW *parent_win, DrugNode *drug) {
                     }
                     current_field++;
                 } else {
-                    double price = atof(price_str);
-                    int stock = atoi(stock_str);
+                    double price = 0.0;
+                    int stock = 0;
+                    if (!parse_non_negative_double(price_str, &price)) {
+                        ui_show_message("错误", "价格必须是非负数字", 2);
+                        break;
+                    }
+                    if (!parse_int_in_range(stock_str, 0, INT_MAX, &stock)) {
+                        ui_show_message("错误", "库存必须是非负整数", 2);
+                        break;
+                    }
                     DrugNode newInfo = make_drug(name, spec, factory, price, stock);
                     modify_drug(g_drugs, old_name, newInfo);
                     save_drugs(DATA_PATH_DRUGS, g_drugs);
@@ -3118,7 +3283,11 @@ int ui_add_bill_form(WINDOW *parent_win) {
                 } else {
                     if (strlen(pn) == 0) ui_show_message("错误", "患者姓名必填", 2);
                     else {
-                        double a = atof(amt);
+                        double a = 0.0;
+                        if (!parse_non_negative_double(amt, &a)) {
+                            ui_show_message("错误", "金额必须是非负数字", 2);
+                            break;
+                        }
                         BillNode b = make_bill(pn, item, a);
                         add_bill(&g_bills, b);
                         save_bills(DATA_PATH_BILLS, g_bills);
@@ -3142,9 +3311,13 @@ int ui_modify_bill_form(WINDOW *parent_win, BillNode *bill) {
     keypad(w, TRUE);
     char pn[MAX_NAME], item[MAX_NAME], amt[20], old_pn[MAX_NAME], old_item[MAX_NAME];
     strncpy(pn, bill->patientName, MAX_NAME-1);
+    pn[MAX_NAME - 1] = '\0';
     strncpy(old_pn, bill->patientName, MAX_NAME-1);
+    old_pn[MAX_NAME - 1] = '\0';
     strncpy(item, bill->itemName, MAX_NAME-1);
+    item[MAX_NAME - 1] = '\0';
     strncpy(old_item, bill->itemName, MAX_NAME-1);
+    old_item[MAX_NAME - 1] = '\0';
     snprintf(amt, sizeof(amt), "%.2f", bill->amount);
     int cf = 0, ch;
     while (1) {
@@ -3201,7 +3374,17 @@ int ui_modify_bill_form(WINDOW *parent_win, BillNode *bill) {
                     }
                     cf++;
                 } else {
-                    double a = atof(amt);
+                    double a = 0.0;
+                    if (!parse_non_negative_double(amt, &a)) {
+                        ui_show_message("错误", "金额必须是非负数字", 2);
+                        break;
+                    }
+                    if (g_current_user != NULL &&
+                        g_current_user->role == ROLE_DOCTOR &&
+                        !is_patient_of_doctor(pn, g_current_user->username)) {
+                        ui_show_message("错误", "医生只能修改自己患者的费用", 2);
+                        break;
+                    }
                     BillNode nb = make_bill(pn, item, a);
                     modify_bill(g_bills, old_pn, old_item, nb);
                     save_bills(DATA_PATH_BILLS, g_bills);
@@ -4321,7 +4504,11 @@ static int ui_doctor_add_bill_form(WINDOW *parent_win) {
                         /* 检查是否是医生自己的患者 */
                         ui_show_message("错误", "该患者不是您的患者，无法添加费用", 2);
                     } else {
-                        double a = atof(amt);
+                        double a = 0.0;
+                        if (!parse_non_negative_double(amt, &a)) {
+                            ui_show_message("错误", "金额必须是非负数字", 2);
+                            break;
+                        }
                         BillNode b = make_bill(pn, item, a);
                         add_bill(&g_bills, b);
                         save_bills(DATA_PATH_BILLS, g_bills);

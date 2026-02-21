@@ -4,6 +4,20 @@
 #include "../include/datastruct.h"
 #include "../include/drug.h"
 
+static void copy_drug_fields(DrugNode *dst, const DrugNode *src) {
+    if (dst == NULL || src == NULL) {
+        return;
+    }
+    strncpy(dst->name, src->name, MAX_NAME - 1);
+    dst->name[MAX_NAME - 1] = '\0';
+    strncpy(dst->spec, src->spec, MAX_DEPT - 1);
+    dst->spec[MAX_DEPT - 1] = '\0';
+    strncpy(dst->factory, src->factory, MAX_NAME - 1);
+    dst->factory[MAX_NAME - 1] = '\0';
+    dst->price = src->price;
+    dst->stock = src->stock;
+}
+
 // 工具: 构造一个药品记录
 DrugNode make_drug(const char *name, const char *spec, const char *factory, const double price, const int stock) {
     DrugNode p;
@@ -26,11 +40,7 @@ DrugNode *add_drug(DrugNode **head, const DrugNode newInfo) {
     }
 
     //将新数据填入临时结构体newNode
-    strcpy(newNode->name, newInfo.name);
-    strcpy(newNode->spec, newInfo.spec);
-    strcpy(newNode->factory, newInfo.factory);
-    newNode->price = newInfo.price;
-    newNode->stock = newInfo.stock;
+    copy_drug_fields(newNode, &newInfo);
 
     newNode->next = NULL;
 
@@ -67,11 +77,7 @@ DrugNode *modify_drug(DrugNode *head, const char *name, const DrugNode newInfo) 
     while (current != NULL) {
         if (strcmp(current->name, name) == 0) {
             // 更新各个字段
-            strcpy(current->name, newInfo.name);
-            strcpy(current->spec, newInfo.spec);
-            strcpy(current->factory, newInfo.factory);
-            current->price = newInfo.price;
-            current->stock = newInfo.stock;
+            copy_drug_fields(current, &newInfo);
             return current; // 返回修改后的节点指针
         }
         current = current->next; // 继续下一个节点

@@ -4,6 +4,23 @@
 #include "../include/datastruct.h"
 #include "../include/doctor.h"
 
+static void copy_doctor_fields(DoctorNode *dst, const DoctorNode *src) {
+    if (dst == NULL || src == NULL) {
+        return;
+    }
+    strncpy(dst->name, src->name, MAX_NAME - 1);
+    dst->name[MAX_NAME - 1] = '\0';
+    dst->age = src->age;
+    strncpy(dst->gender, src->gender, MAX_GENDER - 1);
+    dst->gender[MAX_GENDER - 1] = '\0';
+    strncpy(dst->phone, src->phone, MAX_PHONE - 1);
+    dst->phone[MAX_PHONE - 1] = '\0';
+    strncpy(dst->department, src->department, MAX_DEPT - 1);
+    dst->department[MAX_DEPT - 1] = '\0';
+    strncpy(dst->schedule, src->schedule, MAX_DESC - 1);
+    dst->schedule[MAX_DESC - 1] = '\0';
+}
+
 // 工具: 构造一个医生记录
 DoctorNode make_doctor(const char *name, int age, const char *gender, const char *department, const char *phone, const char *schedule) {
     DoctorNode p;
@@ -27,12 +44,7 @@ DoctorNode *add_doctor(DoctorNode **head, const DoctorNode newInfo) {
     }
 
     //将新数据填入临时结构体newNode
-    strcpy(newNode->name, newInfo.name);
-    newNode->age = newInfo.age;
-    strcpy(newNode->gender, newInfo.gender);
-    strcpy(newNode->phone, newInfo.phone);
-    strcpy(newNode->department, newInfo.department);
-    strcpy(newNode->schedule, newInfo.schedule);
+    copy_doctor_fields(newNode, &newInfo);
 
     newNode->next = NULL;
 
@@ -81,12 +93,7 @@ DoctorNode *modify_doctor(DoctorNode *head, const char *phone, const DoctorNode 
     while (current != NULL) {
         if (strcmp(current->phone, phone) == 0) {
             // 更新各个字段
-            strcpy(current->name, newInfo.name);
-            current->age = newInfo.age;
-            strcpy(current->gender, newInfo.gender);
-            strcpy(current->phone, newInfo.phone);
-            strcpy(current->department, newInfo.department);
-            strcpy(current->schedule, newInfo.schedule);
+            copy_doctor_fields(current, &newInfo);
             return current; // 返回修改后的节点指针
         }
         current = current->next; // 继续下一个节点

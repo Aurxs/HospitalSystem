@@ -7,6 +7,14 @@
 int test_count_auth = 0;
 int pass_count_auth = 0;
 
+static void legacy_cipher(const char *input, char *output) {
+    int i;
+    for (i = 0; i < MAX_NAME - 1 && input[i] != '\0'; i++) {
+        output[i] = (char) (input[i] ^ 0xAA);
+    }
+    output[i] = '\0';
+}
+
 void test_make_user() {
     printf("测试 make_user 函数...\n");
     test_count_auth++;
@@ -23,6 +31,17 @@ void test_make_user() {
 
     pass_count_auth++;
     printf("✓ make_user 测试通过\n\n");
+}
+
+void test_make_user_invalid_role() {
+    printf("测试 make_user 角色边界...\n");
+    test_count_auth++;
+
+    AuthNode user = make_user("guest", "123456", 99);
+    assert(user.role == 2); // 非法角色应回退为患者
+
+    pass_count_auth++;
+    printf("✓ make_user 角色边界测试通过\n\n");
 }
 
 void test_add_find_user() {
@@ -85,6 +104,37 @@ void test_authenticate_user() {
 
     pass_count_auth++;
     printf("✓ authenticate_user 测试通过\n\n");
+}
+
+void test_authenticate_legacy_password() {
+    printf("测试 authenticate_user 兼容旧密码格式...\n");
+    test_count_auth++;
+
+    AuthNode *head = NULL;
+    AuthNode legacy = {0};
+    strncpy(legacy.username, "legacy", MAX_NAME - 1);
+    legacy.username[MAX_NAME - 1] = '\0';
+    legacy.role = 1;
+    legacy.next = NULL;
+    legacy_cipher("oldpass", legacy.password);
+    add_user(&head, legacy);
+
+    assert(authenticate_user(head, "legacy", "oldpass") == 1);
+    assert(authenticate_user(head, "legacy", "wrong") == 0);
+
+    // 首次成功认证后应升级到新摘要格式（不再是旧密文）
+    AuthNode *found = find_user(head, "legacy");
+    assert(found != NULL);
+    assert(strncmp(found->password, "h2$", 3) == 0);
+
+    while (head != NULL) {
+        AuthNode *temp = head;
+        head = head->next;
+        free(temp);
+    }
+
+    pass_count_auth++;
+    printf("✓ authenticate_user 兼容旧密码格式测试通过\n\n");
 }
 
 void test_modify_user() {
@@ -166,11 +216,12 @@ void run_auth_tests() {
     printf("============================================\n");
 
     test_make_user();
+    test_make_user_invalid_role();
     test_add_find_user();
     test_authenticate_user();
+    test_authenticate_legacy_password();
     test_modify_user();
     test_delete_user();
 
     printf("Auth 模块测试完成: %d/%d 通过\n\n", pass_count_auth, test_count_auth);
 }
-
