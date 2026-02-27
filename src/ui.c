@@ -63,6 +63,9 @@ static char DATA_PATH_USERS[1024] = ""; /* 用户数据文件路径 */
 /* 前置声明：该函数在医生模块区域定义，这里用于输入校验逻辑 */
 static int is_patient_of_doctor(const char *patient_name, const char *doctor_name);
 
+static void ui_show_message_with_underlay(const char *title, const char *message, int type, WINDOW *underlay);
+static int ui_confirm_dialog_with_underlay(const char *title, const char *message, WINDOW *underlay);
+
 static int normalize_role(int role) {
     if (role < ROLE_ADMIN || role > ROLE_PATIENT) {
         return ROLE_PATIENT;
@@ -492,7 +495,7 @@ int ui_init(void) {
         add_user(&g_users, admin);
         save_users(DATA_PATH_USERS, g_users);
         snprintf(hint, sizeof(hint), "首次启动已创建admin账号，初始密码: %s", initial_password);
-        ui_show_message("安全提示", hint, 5, stdscr);
+        ui_show_message_with_underlay("安全提示", hint, 5, stdscr);
         memset(initial_password, 0, sizeof(initial_password));
     }
 
@@ -588,7 +591,7 @@ static void close_popup_window(WINDOW *popup, WINDOW *underlay) {
  *   - message: 消息内容
  *   - type: 消息类型 (0=普通, 1=成功, 2=错误, 3=警告)
  */
-void ui_show_message(const char *title, const char *message, int type, WINDOW *underlay) {
+static void ui_show_message_with_underlay(const char *title, const char *message, int type, WINDOW *underlay) {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x); /* 获取屏幕尺寸 */
 
@@ -639,6 +642,10 @@ void ui_show_message(const char *title, const char *message, int type, WINDOW *u
     close_popup_window(msg_win, underlay);
 }
 
+void ui_show_message(const char *title, const char *message, int type) {
+    ui_show_message_with_underlay(title, message, type, stdscr);
+}
+
 /*
  * 确认对话框
  * 功能: 显示确认对话框，让用户选择是或否
@@ -647,7 +654,7 @@ void ui_show_message(const char *title, const char *message, int type, WINDOW *u
  *   - message: 确认消息
  * 返回: 1-用户选择是, 0-用户选择否
  */
-int ui_confirm_dialog(const char *title, const char *message, WINDOW *underlay) {
+static int ui_confirm_dialog_with_underlay(const char *title, const char *message, WINDOW *underlay) {
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
@@ -725,6 +732,10 @@ int ui_confirm_dialog(const char *title, const char *message, WINDOW *underlay) 
                 return 0;
         }
     }
+}
+
+int ui_confirm_dialog(const char *title, const char *message) {
+    return ui_confirm_dialog_with_underlay(title, message, stdscr);
 }
 
 /*
@@ -1077,14 +1088,14 @@ int ui_login_screen(void) {
                 } else if (current_field == 2) {
                     /* 点击登录按钮 */
                     if (strlen(username) == 0 || strlen(password) == 0) {
-                        ui_show_message("错误", "请输入用户名和密码", 2, login_win);
+                        ui_show_message_with_underlay("错误", "请输入用户名和密码", 2, login_win);
                     } else {
                         /* 验证用户 */
                         if (authenticate_user(g_users, username, password)) {
                             /* 登录成功 */
                             g_current_user = find_user(g_users, username);
                             if (g_current_user == NULL) {
-                                ui_show_message("错误", "登录状态异常，请重试", 2, login_win);
+                                ui_show_message_with_underlay("错误", "登录状态异常，请重试", 2, login_win);
                                 break;
                             }
                             g_current_user->role = normalize_role(g_current_user->role);
@@ -1094,10 +1105,10 @@ int ui_login_screen(void) {
                             /* 登录失败 */
                             login_attempts++;
                             if (login_attempts >= 3) {
-                                ui_show_message("警告", "登录失败次数过多，请稍后再试", 3, login_win);
+                                ui_show_message_with_underlay("警告", "登录失败次数过多，请稍后再试", 3, login_win);
                                 login_attempts = 0;
                             } else {
-                                ui_show_message("错误", "用户名或密码错误", 2, login_win);
+                                ui_show_message_with_underlay("错误", "用户名或密码错误", 2, login_win);
                             }
                             /* 清空密码 */
                             memset(password, 0, sizeof(password));
@@ -1489,17 +1500,17 @@ int ui_add_patient_form(WINDOW *parent_win) {
                 } else {
                     /* 确认添加 */
                     if (strlen(name) == 0 || strlen(phone) == 0) {
-                        ui_show_message("错误", "姓名和电话为必填项", 2, form_win);
+                        ui_show_message_with_underlay("错误", "姓名和电话为必填项", 2, form_win);
                     } else {
                         int age = 0;
                         if (!parse_int_in_range(age_str, 0, 150, &age)) {
-                            ui_show_message("错误", "年龄必须是0-150的整数", 2, form_win);
+                            ui_show_message_with_underlay("错误", "年龄必须是0-150的整数", 2, form_win);
                             break;
                         }
                         PatientNode p = make_patient(name, age, gender, phone, diagnosis, treatment);
                         add_patient(&g_patients, p);
                         save_patients(DATA_PATH_PATIENTS, g_patients);
-                        ui_show_message("成功", "患者信息添加成功", 1, form_win);
+                        ui_show_message_with_underlay("成功", "患者信息添加成功", 1, form_win);
                         delwin(form_win);
                         return 0;
                     }
@@ -1655,13 +1666,13 @@ int ui_modify_patient_form(WINDOW *parent_win, PatientNode *patient) {
                 } else {
                     int age = 0;
                     if (!parse_int_in_range(age_str, 0, 150, &age)) {
-                        ui_show_message("错误", "年龄必须是0-150的整数", 2, form_win);
+                        ui_show_message_with_underlay("错误", "年龄必须是0-150的整数", 2, form_win);
                         break;
                     }
                     PatientNode newInfo = make_patient(name, age, gender, phone, diagnosis, treatment);
                     modify_patient(g_patients, old_phone, newInfo);
                     save_patients(DATA_PATH_PATIENTS, g_patients);
-                    ui_show_message("成功", "患者信息修改成功", 1, form_win);
+                    ui_show_message_with_underlay("成功", "患者信息修改成功", 1, form_win);
                     delwin(form_win);
                     return 0;
                 }
@@ -1745,9 +1756,9 @@ void ui_search_patient(WINDOW *parent_win) {
                         char msg[256];
                         snprintf(msg, sizeof(msg), "找到: %s, %d岁, %s, %s",
                                  result->name, result->age, result->gender, result->phone);
-                        ui_show_message("查询结果", msg, 1, search_win);
+                        ui_show_message_with_underlay("查询结果", msg, 1, search_win);
                     } else {
-                        ui_show_message("查询结果", "未找到匹配的患者", 3, search_win);
+                        ui_show_message_with_underlay("查询结果", "未找到匹配的患者", 3, search_win);
                     }
                 }
                 break;
@@ -1812,17 +1823,17 @@ void ui_sort_patient_menu(WINDOW *parent_win) {
                     case 0:
                         g_patients = sort_patients_by_name(g_patients);
                         save_patients(DATA_PATH_PATIENTS, g_patients);
-                        ui_show_message("成功", "已按姓名排序", 1, menu_win);
+                        ui_show_message_with_underlay("成功", "已按姓名排序", 1, menu_win);
                         break;
                     case 1:
                         g_patients = sort_patients_by_phone(g_patients);
                         save_patients(DATA_PATH_PATIENTS, g_patients);
-                        ui_show_message("成功", "已按电话排序", 1, menu_win);
+                        ui_show_message_with_underlay("成功", "已按电话排序", 1, menu_win);
                         break;
                     case 2:
                         g_patients = sort_patients_by_age(g_patients);
                         save_patients(DATA_PATH_PATIENTS, g_patients);
-                        ui_show_message("成功", "已按年龄排序", 1, menu_win);
+                        ui_show_message_with_underlay("成功", "已按年龄排序", 1, menu_win);
                         break;
                 }
                 delwin(menu_win);
@@ -1911,13 +1922,13 @@ void ui_patient_management(WINDOW *content_win) {
                 if (total_count > 0) {
                     PatientNode *p = (PatientNode *) get_node_by_index(g_patients, start_index + selected_row, 0);
                     if (p != NULL) {
-                        if (ui_confirm_dialog("确认删除", "确定要删除该患者信息吗?", content_win)) {
+                        if (ui_confirm_dialog_with_underlay("确认删除", "确定要删除该患者信息吗?", content_win)) {
                             g_patients = delete_patient(g_patients, p->phone);
                             save_patients(DATA_PATH_PATIENTS, g_patients);
                             total_count = count_list_nodes(g_patients, 0);
                             if (selected_row >= total_count) selected_row = total_count - 1;
                             if (selected_row < 0) selected_row = 0;
-                            ui_show_message("成功", "患者信息已删除", 1, content_win);
+                            ui_show_message_with_underlay("成功", "患者信息已删除", 1, content_win);
                         }
                     }
                 }
@@ -2134,17 +2145,17 @@ int ui_add_doctor_form(WINDOW *parent_win) {
                     current_field++;
                 } else {
                     if (strlen(name) == 0 || strlen(phone) == 0) {
-                        ui_show_message("错误", "姓名和电话为必填项", 2, form_win);
+                        ui_show_message_with_underlay("错误", "姓名和电话为必填项", 2, form_win);
                     } else {
                         int age = 0;
                         if (!parse_int_in_range(age_str, 0, 150, &age)) {
-                            ui_show_message("错误", "年龄必须是0-150的整数", 2, form_win);
+                            ui_show_message_with_underlay("错误", "年龄必须是0-150的整数", 2, form_win);
                             break;
                         }
                         DoctorNode d = make_doctor(name, age, gender, department, phone, schedule);
                         add_doctor(&g_doctors, d);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
-                        ui_show_message("成功", "医生信息添加成功", 1, form_win);
+                        ui_show_message_with_underlay("成功", "医生信息添加成功", 1, form_win);
                         delwin(form_win);
                         return 0;
                     }
@@ -2291,13 +2302,13 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                 } else {
                     int age = 0;
                     if (!parse_int_in_range(age_str, 0, 150, &age)) {
-                        ui_show_message("错误", "年龄必须是0-150的整数", 2, form_win);
+                        ui_show_message_with_underlay("错误", "年龄必须是0-150的整数", 2, form_win);
                         break;
                     }
                     DoctorNode newInfo = make_doctor(name, age, gender, department, phone, schedule);
                     modify_doctor(g_doctors, old_phone, newInfo);
                     save_doctors(DATA_PATH_DOCTORS, g_doctors);
-                    ui_show_message("成功", "医生信息修改成功", 1, form_win);
+                    ui_show_message_with_underlay("成功", "医生信息修改成功", 1, form_win);
                     delwin(form_win);
                     return 0;
                 }
@@ -2370,9 +2381,9 @@ void ui_search_doctor(WINDOW *parent_win) {
                         char msg[256];
                         snprintf(msg, sizeof(msg), "找到: %s, %d岁, %s, %s",
                                  result->name, result->age, result->department, result->phone);
-                        ui_show_message("查询结果", msg, 1, search_win);
+                        ui_show_message_with_underlay("查询结果", msg, 1, search_win);
                     } else {
-                        ui_show_message("查询结果", "未找到匹配的医生", 3, search_win);
+                        ui_show_message_with_underlay("查询结果", "未找到匹配的医生", 3, search_win);
                     }
                 }
                 break;
@@ -2427,17 +2438,17 @@ void ui_sort_doctor_menu(WINDOW *parent_win) {
                     case 0:
                         g_doctors = sort_doctors_by_name(g_doctors);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
-                        ui_show_message("成功", "已按姓名排序", 1, menu_win);
+                        ui_show_message_with_underlay("成功", "已按姓名排序", 1, menu_win);
                         break;
                     case 1:
                         g_doctors = sort_doctors_by_phone(g_doctors);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
-                        ui_show_message("成功", "已按电话排序", 1, menu_win);
+                        ui_show_message_with_underlay("成功", "已按电话排序", 1, menu_win);
                         break;
                     case 2:
                         g_doctors = sort_doctors_by_age(g_doctors);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
-                        ui_show_message("成功", "已按年龄排序", 1, menu_win);
+                        ui_show_message_with_underlay("成功", "已按年龄排序", 1, menu_win);
                         break;
                 }
                 delwin(menu_win);
@@ -2502,13 +2513,13 @@ void ui_doctor_management(WINDOW *content_win) {
             case 'D':
                 if (total_count > 0) {
                     DoctorNode *d = (DoctorNode *) get_node_by_index(g_doctors, start_index + selected_row, 1);
-                    if (d != NULL && ui_confirm_dialog("确认删除", "确定要删除该医生信息吗?", content_win)) {
+                    if (d != NULL && ui_confirm_dialog_with_underlay("确认删除", "确定要删除该医生信息吗?", content_win)) {
                         g_doctors = delete_doctor(g_doctors, d->phone);
                         save_doctors(DATA_PATH_DOCTORS, g_doctors);
                         total_count = count_list_nodes(g_doctors, 1);
                         if (selected_row >= total_count) selected_row = total_count - 1;
                         if (selected_row < 0) selected_row = 0;
-                        ui_show_message("成功", "医生信息已删除", 1, content_win);
+                        ui_show_message_with_underlay("成功", "医生信息已删除", 1, content_win);
                     }
                 }
                 break;
@@ -2671,22 +2682,22 @@ int ui_add_drug_form(WINDOW *parent_win) {
                     current_field++;
                 } else {
                     if (strlen(name) == 0) {
-                        ui_show_message("错误", "药品名称为必填项", 2, form_win);
+                        ui_show_message_with_underlay("错误", "药品名称为必填项", 2, form_win);
                     } else {
                         double price = 0.0;
                         int stock = 0;
                         if (!parse_non_negative_double(price_str, &price)) {
-                            ui_show_message("错误", "价格必须是非负数字", 2, form_win);
+                            ui_show_message_with_underlay("错误", "价格必须是非负数字", 2, form_win);
                             break;
                         }
                         if (!parse_int_in_range(stock_str, 0, INT_MAX, &stock)) {
-                            ui_show_message("错误", "库存必须是非负整数", 2, form_win);
+                            ui_show_message_with_underlay("错误", "库存必须是非负整数", 2, form_win);
                             break;
                         }
                         DrugNode d = make_drug(name, spec, factory, price, stock);
                         add_drug(&g_drugs, d);
                         save_drugs(DATA_PATH_DRUGS, g_drugs);
-                        ui_show_message("成功", "药品信息添加成功", 1, form_win);
+                        ui_show_message_with_underlay("成功", "药品信息添加成功", 1, form_win);
                         delwin(form_win);
                         return 0;
                     }
@@ -2798,17 +2809,17 @@ int ui_modify_drug_form(WINDOW *parent_win, DrugNode *drug) {
                     double price = 0.0;
                     int stock = 0;
                     if (!parse_non_negative_double(price_str, &price)) {
-                        ui_show_message("错误", "价格必须是非负数字", 2, form_win);
+                        ui_show_message_with_underlay("错误", "价格必须是非负数字", 2, form_win);
                         break;
                     }
                     if (!parse_int_in_range(stock_str, 0, INT_MAX, &stock)) {
-                        ui_show_message("错误", "库存必须是非负整数", 2, form_win);
+                        ui_show_message_with_underlay("错误", "库存必须是非负整数", 2, form_win);
                         break;
                     }
                     DrugNode newInfo = make_drug(name, spec, factory, price, stock);
                     modify_drug(g_drugs, old_name, newInfo);
                     save_drugs(DATA_PATH_DRUGS, g_drugs);
-                    ui_show_message("成功", "药品信息修改成功", 1, form_win);
+                    ui_show_message_with_underlay("成功", "药品信息修改成功", 1, form_win);
                     delwin(form_win);
                     return 0;
                 }
@@ -2847,9 +2858,9 @@ void ui_search_drug(WINDOW *parent_win) {
                     if (result) {
                         char msg[256];
                         snprintf(msg, sizeof(msg), "找到: %s, %.2f元, 库存%d", result->name, result->price, result->stock);
-                        ui_show_message("查询结果", msg, 1, search_win);
+                        ui_show_message_with_underlay("查询结果", msg, 1, search_win);
                     } else {
-                        ui_show_message("查询结果", "未找到匹配的药品", 3, search_win);
+                        ui_show_message_with_underlay("查询结果", "未找到匹配的药品", 3, search_win);
                     }
                 }
                 break;
@@ -2893,11 +2904,11 @@ void ui_sort_drug_menu(WINDOW *parent_win) {
                 if (selected == 0) {
                     g_drugs = sort_drugs_by_price(g_drugs);
                     save_drugs(DATA_PATH_DRUGS, g_drugs);
-                    ui_show_message("成功", "已按价格排序", 1, menu_win);
+                    ui_show_message_with_underlay("成功", "已按价格排序", 1, menu_win);
                 } else if (selected == 1) {
                     g_drugs = sort_drugs_by_stock(g_drugs);
                     save_drugs(DATA_PATH_DRUGS, g_drugs);
-                    ui_show_message("成功", "已按库存排序", 1, menu_win);
+                    ui_show_message_with_underlay("成功", "已按库存排序", 1, menu_win);
                 }
                 delwin(menu_win);
                 return;
@@ -2953,13 +2964,13 @@ void ui_drug_management(WINDOW *content_win) {
             case 'D':
                 if (total_count > 0) {
                     DrugNode *d = (DrugNode *) get_node_by_index(g_drugs, start_index + selected_row, 2);
-                    if (d && ui_confirm_dialog("确认删除", "确定要删除该药品信息吗?", content_win)) {
+                    if (d && ui_confirm_dialog_with_underlay("确认删除", "确定要删除该药品信息吗?", content_win)) {
                         g_drugs = delete_drug(g_drugs, d->name);
                         save_drugs(DATA_PATH_DRUGS, g_drugs);
                         total_count = count_list_nodes(g_drugs, 2);
                         if (selected_row >= total_count) selected_row = total_count - 1;
                         if (selected_row < 0) selected_row = 0;
-                        ui_show_message("成功", "药品信息已删除", 1, content_win);
+                        ui_show_message_with_underlay("成功", "药品信息已删除", 1, content_win);
                     }
                 }
                 break;
@@ -3094,11 +3105,11 @@ int ui_add_registration_form(WINDOW *parent_win) {
                     current_field++;
                 } else {
                     if (strlen(patientName) == 0 || strlen(doctorName) ==
-                        0) { ui_show_message("错误", "患者和医生姓名必填", 2, form_win); } else {
+                        0) { ui_show_message_with_underlay("错误", "患者和医生姓名必填", 2, form_win); } else {
                         RegisterNode r = make_registration(patientName, doctorName, department, date);
                         add_registration(&g_registrations, r);
                         save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
-                        ui_show_message("成功", "挂号成功", 1, form_win);
+                        ui_show_message_with_underlay("成功", "挂号成功", 1, form_win);
                         delwin(form_win);
                         return 0;
                     }
@@ -3133,8 +3144,8 @@ void ui_search_registration(WINDOW *parent_win) {
                     char msg[256];
                     snprintf(msg, sizeof(msg), "找到: %.20s -> %.20s, %.15s", r->patientName, r->doctorName,
                              r->department);
-                    ui_show_message("结果", msg, 1, w);
-                } else ui_show_message("结果", "未找到", 3, w);
+                    ui_show_message_with_underlay("结果", msg, 1, w);
+                } else ui_show_message_with_underlay("结果", "未找到", 3, w);
             }
         } else if (ch == 27) {
             delwin(w);
@@ -3172,7 +3183,7 @@ void ui_registration_management(WINDOW *content_win) {
             case 'D':
                 if (total > 0) {
                     RegisterNode *r = (RegisterNode *) get_node_by_index(g_registrations, start + sel, 3);
-                    if (r && ui_confirm_dialog("确认", "删除此挂号?", content_win)) {
+                    if (r && ui_confirm_dialog_with_underlay("确认", "删除此挂号?", content_win)) {
                         g_registrations = delete_registration(g_registrations, r->patientName, r->date);
                         save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
                         total = count_list_nodes(g_registrations, 3);
@@ -3288,17 +3299,17 @@ int ui_add_bill_form(WINDOW *parent_win) {
                     }
                     cf++;
                 } else {
-                    if (strlen(pn) == 0) ui_show_message("错误", "患者姓名必填", 2, w);
+                    if (strlen(pn) == 0) ui_show_message_with_underlay("错误", "患者姓名必填", 2, w);
                     else {
                         double a = 0.0;
                         if (!parse_non_negative_double(amt, &a)) {
-                            ui_show_message("错误", "金额必须是非负数字", 2, w);
+                            ui_show_message_with_underlay("错误", "金额必须是非负数字", 2, w);
                             break;
                         }
                         BillNode b = make_bill(pn, item, a);
                         add_bill(&g_bills, b);
                         save_bills(DATA_PATH_BILLS, g_bills);
-                        ui_show_message("成功", "费用添加成功", 1, w);
+                        ui_show_message_with_underlay("成功", "费用添加成功", 1, w);
                         delwin(w);
                         return 0;
                     }
@@ -3383,19 +3394,19 @@ int ui_modify_bill_form(WINDOW *parent_win, BillNode *bill) {
                 } else {
                     double a = 0.0;
                     if (!parse_non_negative_double(amt, &a)) {
-                        ui_show_message("错误", "金额必须是非负数字", 2, w);
+                        ui_show_message_with_underlay("错误", "金额必须是非负数字", 2, w);
                         break;
                     }
                     if (g_current_user != NULL &&
                         g_current_user->role == ROLE_DOCTOR &&
                         !is_patient_of_doctor(pn, g_current_user->username)) {
-                        ui_show_message("错误", "医生只能修改自己患者的费用", 2, w);
+                        ui_show_message_with_underlay("错误", "医生只能修改自己患者的费用", 2, w);
                         break;
                     }
                     BillNode nb = make_bill(pn, item, a);
                     modify_bill(g_bills, old_pn, old_item, nb);
                     save_bills(DATA_PATH_BILLS, g_bills);
-                    ui_show_message("成功", "费用修改成功", 1, w);
+                    ui_show_message_with_underlay("成功", "费用修改成功", 1, w);
                     delwin(w);
                     return 0;
                 }
@@ -3427,7 +3438,7 @@ void ui_search_bill(WINDOW *parent_win) {
                 double total = calculate_total_bill(g_bills, kw);
                 char msg[100];
                 snprintf(msg, sizeof(msg), "%s 总费用: %.2f元", kw, total);
-                ui_show_message("结果", msg, 1, w);
+                ui_show_message_with_underlay("结果", msg, 1, w);
             }
         } else if (ch == 27) {
             delwin(w);
@@ -3439,7 +3450,7 @@ void ui_search_bill(WINDOW *parent_win) {
 void ui_sort_bill_menu(WINDOW *parent_win) {
     g_bills = sort_bills_by_amount(g_bills);
     save_bills(DATA_PATH_BILLS, g_bills);
-    ui_show_message("成功", "已按金额排序", 1, parent_win);
+    ui_show_message_with_underlay("成功", "已按金额排序", 1, parent_win);
 }
 
 void ui_bill_management(WINDOW *content_win) {
@@ -3471,7 +3482,7 @@ void ui_bill_management(WINDOW *content_win) {
             case 'D':
                 if (total > 0) {
                     BillNode *b = (BillNode *) get_node_by_index(g_bills, start + sel, 4);
-                    if (b && ui_confirm_dialog("确认", "删除此费用?", content_win)) {
+                    if (b && ui_confirm_dialog_with_underlay("确认", "删除此费用?", content_win)) {
                         g_bills = delete_bill(g_bills, b->patientName, b->itemName);
                         save_bills(DATA_PATH_BILLS, g_bills);
                         total = count_list_nodes(g_bills, 4);
@@ -3592,13 +3603,13 @@ int ui_add_user_form(WINDOW *parent_win) {
                     ui_input_string(w, 4, 13, pw, 30, 1);
                     cf++;
                 } else if (cf == 2) { role = (role + 1) % 3; } else {
-                    if (strlen(un) == 0 || strlen(pw) == 0) ui_show_message("错误", "用户名密码必填", 2, w);
-                    else if (find_user(g_users, un)) ui_show_message("错误", "用户已存在", 2, w);
+                    if (strlen(un) == 0 || strlen(pw) == 0) ui_show_message_with_underlay("错误", "用户名密码必填", 2, w);
+                    else if (find_user(g_users, un)) ui_show_message_with_underlay("错误", "用户已存在", 2, w);
                     else {
                         AuthNode a = make_user(un, pw, role);
                         add_user(&g_users, a);
                         save_users(DATA_PATH_USERS, g_users);
-                        ui_show_message("成功", "用户添加成功", 1, w);
+                        ui_show_message_with_underlay("成功", "用户添加成功", 1, w);
                         delwin(w);
                         return 0;
                     }
@@ -3652,12 +3663,12 @@ int ui_modify_user_form(WINDOW *parent_win, AuthNode *user) {
                     ui_input_string(w, 4, 13, pw, 30, 1);
                     cf++;
                 } else {
-                    if (strlen(pw) == 0) ui_show_message("错误", "密码不能为空", 2, w);
+                    if (strlen(pw) == 0) ui_show_message_with_underlay("错误", "密码不能为空", 2, w);
                     else {
                         AuthNode ni = make_user(user->username, pw, user->role);
                         modify_user(g_users, user->username, ni);
                         save_users(DATA_PATH_USERS, g_users);
-                        ui_show_message("成功", "密码修改成功", 1, w);
+                        ui_show_message_with_underlay("成功", "密码修改成功", 1, w);
                         delwin(w);
                         return 0;
                     }
@@ -3698,13 +3709,13 @@ void ui_user_management(WINDOW *content_win) {
             case 'D':
                 if (total > 0) {
                     AuthNode *u = (AuthNode *) get_node_by_index(g_users, start + sel, 5);
-                    if (u && strcmp(u->username, "admin") != 0 && ui_confirm_dialog("确认", "删除此用户?", content_win)) {
+                    if (u && strcmp(u->username, "admin") != 0 && ui_confirm_dialog_with_underlay("确认", "删除此用户?", content_win)) {
                         g_users = delete_user(g_users, u->username);
                         save_users(DATA_PATH_USERS, g_users);
                         total = count_list_nodes(g_users, 5);
                         if (sel >= total) sel = total - 1;
                         if (sel < 0) sel = 0;
-                    } else if (u && strcmp(u->username, "admin") == 0) ui_show_message("错误", "不能删除admin", 2, content_win);
+                    } else if (u && strcmp(u->username, "admin") == 0) ui_show_message_with_underlay("错误", "不能删除admin", 2, content_win);
                 }
                 break;
             case 'm':
@@ -3864,7 +3875,7 @@ void ui_patient_register(WINDOW *content_win) {
             case KEY_ENTER: {
                 /* 选择医生进行挂号 */
                 if (filtered_count == 0) {
-                    ui_show_message("提示", "没有可选择的医生", 3, content_win);
+                    ui_show_message_with_underlay("提示", "没有可选择的医生", 3, content_win);
                     break;
                 }
 
@@ -3941,7 +3952,7 @@ void ui_patient_register(WINDOW *content_win) {
                                     confirm_field = 1;
                                 } else {
                                     if (strlen(date) == 0) {
-                                        ui_show_message("错误", "请输入挂号日期", 2, confirm_win);
+                                        ui_show_message_with_underlay("错误", "请输入挂号日期", 2, confirm_win);
                                     } else {
                                         /* 创建挂号记录 - 使用当前登录用户名作为患者名 */
                                         RegisterNode r = make_registration(
@@ -3952,7 +3963,7 @@ void ui_patient_register(WINDOW *content_win) {
                                         );
                                         add_registration(&g_registrations, r);
                                         save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
-                                        ui_show_message("成功", "挂号成功！", 1, confirm_win);
+                                        ui_show_message_with_underlay("成功", "挂号成功！", 1, confirm_win);
                                         delwin(confirm_win);
                                         touchwin(stdscr);
                                         refresh();
@@ -4368,9 +4379,9 @@ static void ui_doctor_search_patient(WINDOW *parent_win) {
                     char msg[256];
                     snprintf(msg, sizeof(msg), "找到: %s, %d岁, %s",
                              found->name, found->age, found->phone);
-                    ui_show_message("结果", msg, 1, w);
+                    ui_show_message_with_underlay("结果", msg, 1, w);
                 } else {
-                    ui_show_message("结果", "在您的患者中未找到", 3, w);
+                    ui_show_message_with_underlay("结果", "在您的患者中未找到", 3, w);
                 }
             }
         } else if (ch == 27) {
@@ -4417,9 +4428,9 @@ static void ui_doctor_search_registration(WINDOW *parent_win) {
                     char msg[256];
                     snprintf(msg, sizeof(msg), "找到: %s, 科室: %s, 日期: %s",
                              found->patientName, found->department, found->date);
-                    ui_show_message("结果", msg, 1, w);
+                    ui_show_message_with_underlay("结果", msg, 1, w);
                 } else {
-                    ui_show_message("结果", "在您的挂号中未找到", 3, w);
+                    ui_show_message_with_underlay("结果", "在您的挂号中未找到", 3, w);
                 }
             }
         } else if (ch == 27) {
@@ -4506,20 +4517,20 @@ static int ui_doctor_add_bill_form(WINDOW *parent_win) {
                     cf++;
                 } else {
                     if (strlen(pn) == 0) {
-                        ui_show_message("错误", "患者姓名必填", 2, w);
+                        ui_show_message_with_underlay("错误", "患者姓名必填", 2, w);
                     } else if (!is_patient_of_doctor(pn, g_current_user->username)) {
                         /* 检查是否是医生自己的患者 */
-                        ui_show_message("错误", "该患者不是您的患者，无法添加费用", 2, w);
+                        ui_show_message_with_underlay("错误", "该患者不是您的患者，无法添加费用", 2, w);
                     } else {
                         double a = 0.0;
                         if (!parse_non_negative_double(amt, &a)) {
-                            ui_show_message("错误", "金额必须是非负数字", 2, w);
+                            ui_show_message_with_underlay("错误", "金额必须是非负数字", 2, w);
                             break;
                         }
                         BillNode b = make_bill(pn, item, a);
                         add_bill(&g_bills, b);
                         save_bills(DATA_PATH_BILLS, g_bills);
-                        ui_show_message("成功", "费用添加成功", 1, w);
+                        ui_show_message_with_underlay("成功", "费用添加成功", 1, w);
                         delwin(w);
                         touchwin(stdscr);
                         refresh();
@@ -4793,7 +4804,7 @@ void ui_doctor_registration_management(WINDOW *content_win) {
                         }
                         sel_reg = sel_reg->next;
                     }
-                    if (sel_reg != NULL && ui_confirm_dialog("确认", "删除此挂号记录?", content_win)) {
+                    if (sel_reg != NULL && ui_confirm_dialog_with_underlay("确认", "删除此挂号记录?", content_win)) {
                         g_registrations = delete_registration(g_registrations, sel_reg->patientName, sel_reg->date);
                         save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
                         if (selected_row > 0) selected_row--;
@@ -4929,7 +4940,7 @@ void ui_doctor_bill_management(WINDOW *content_win) {
                     pt = pt->next;
                 }
                 if (my_patient_count == 0) {
-                    ui_show_message("提示", "您目前没有患者，无法添加费用", 3, content_win);
+                    ui_show_message_with_underlay("提示", "您目前没有患者，无法添加费用", 3, content_win);
                 } else {
                     ui_doctor_add_bill_form(content_win);
                 }
@@ -4949,7 +4960,7 @@ void ui_doctor_bill_management(WINDOW *content_win) {
                         }
                         sel_bill = sel_bill->next;
                     }
-                    if (sel_bill != NULL && ui_confirm_dialog("确认", "删除此费用记录?", content_win)) {
+                    if (sel_bill != NULL && ui_confirm_dialog_with_underlay("确认", "删除此费用记录?", content_win)) {
                         g_bills = delete_bill(g_bills, sel_bill->patientName, sel_bill->itemName);
                         save_bills(DATA_PATH_BILLS, g_bills);
                         if (selected_row > 0) selected_row--;
@@ -5164,13 +5175,13 @@ void ui_main_screen(int role) {
                         actual_menu == MENU_DOCTOR_MGMT ||
                         actual_menu == MENU_DRUG_MGMT ||
                         actual_menu == MENU_USER_MGMT) {
-                        ui_show_message("权限不足", "患者账户无法访问此功能", 2, sidebar_win);
+                        ui_show_message_with_underlay("权限不足", "患者账户无法访问此功能", 2, sidebar_win);
                         allowed = 0;
                     }
                 } else if (role == ROLE_DOCTOR) {
                     /* 医生不能访问药品管理和用户管理 */
                     if (actual_menu == MENU_DRUG_MGMT || actual_menu == MENU_USER_MGMT) {
-                        ui_show_message("权限不足", "医生账户无法访问此功能", 2, sidebar_win);
+                        ui_show_message_with_underlay("权限不足", "医生账户无法访问此功能", 2, sidebar_win);
                         allowed = 0;
                     }
                 }

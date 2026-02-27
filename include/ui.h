@@ -628,7 +628,7 @@ int ui_modify_user_form(WINDOW *parent_win, AuthNode *user);
  *   - type: 消息类型(0-普通, 1-成功, 2-错误, 3-警告)
  * 返回值: 无
  */
-void ui_show_message(const char *title, const char *message, int type, WINDOW *underlay);
+void ui_show_message(const char *title, const char *message, int type);
 
 /**
  * 函数名: ui_confirm_dialog
@@ -639,7 +639,7 @@ void ui_show_message(const char *title, const char *message, int type, WINDOW *u
  *   - message: 确认消息
  * 返回值: 1-用户选择是, 0-用户选择否
  */
-int ui_confirm_dialog(const char *title, const char *message, WINDOW *underlay);
+int ui_confirm_dialog(const char *title, const char *message);
 
 /**
  * 函数名: ui_input_string
