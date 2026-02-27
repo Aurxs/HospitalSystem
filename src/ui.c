@@ -3864,8 +3864,9 @@ void ui_patient_register(WINDOW *content_win) {
                 delwin(filter_win);
                 start_index = 0;
                 selected_row = 0;
-                touchwin(stdscr);
-                refresh();
+                touchwin(content_win);
+                wnoutrefresh(content_win);
+                doupdate();
                 break;
             }
             case 'c':
@@ -3969,16 +3970,18 @@ void ui_patient_register(WINDOW *content_win) {
                                         save_registrations(DATA_PATH_REGISTRATIONS, g_registrations);
                                         ui_show_message_with_underlay("成功", "挂号成功！", 1, confirm_win);
                                         delwin(confirm_win);
-                                        touchwin(stdscr);
-                                        refresh();
+                                        touchwin(content_win);
+                                        wnoutrefresh(content_win);
+                                        doupdate();
                                         return;
                                     }
                                 }
                                 break;
                             case 27:
                                 delwin(confirm_win);
-                                touchwin(stdscr);
-                                refresh();
+                                touchwin(content_win);
+                                wnoutrefresh(content_win);
+                                doupdate();
                                 confirm_done = 1; /* 使用标志替代goto */
                                 break;
                         }
@@ -4313,8 +4316,9 @@ void ui_patient_main_screen(void) {
                         exit(0);
                 }
                 /* 重新刷新所有窗口 */
-                touchwin(stdscr);
-                refresh();
+                touchwin(content_win);
+                wnoutrefresh(content_win);
+                doupdate();
                 break;
             case 'q':
             case 'Q':
@@ -4390,8 +4394,9 @@ static void ui_doctor_search_patient(WINDOW *parent_win) {
             }
         } else if (ch == 27) {
             delwin(w);
-            touchwin(stdscr);
-            refresh();
+            touchwin(parent_win);
+            wnoutrefresh(parent_win);
+            doupdate();
             return;
         }
     }
@@ -4439,8 +4444,9 @@ static void ui_doctor_search_registration(WINDOW *parent_win) {
             }
         } else if (ch == 27) {
             delwin(w);
-            touchwin(stdscr);
-            refresh();
+            touchwin(parent_win);
+            wnoutrefresh(parent_win);
+            doupdate();
             return;
         }
     }
@@ -4536,16 +4542,18 @@ static int ui_doctor_add_bill_form(WINDOW *parent_win) {
                         save_bills(DATA_PATH_BILLS, g_bills);
                         ui_show_message_with_underlay("成功", "费用添加成功", 1, w);
                         delwin(w);
-                        touchwin(stdscr);
-                        refresh();
+                        touchwin(parent_win);
+                        wnoutrefresh(parent_win);
+                        doupdate();
                         return 0;
                     }
                 }
                 break;
             case 27:
                 delwin(w);
-                touchwin(stdscr);
-                refresh();
+                touchwin(parent_win);
+                wnoutrefresh(parent_win);
+                doupdate();
                 return -1;
         }
     }
@@ -5097,8 +5105,9 @@ void ui_doctor_main_screen(void) {
                         exit(0);
                 }
                 /* 重新刷新所有窗口 */
-                touchwin(stdscr);
-                refresh();
+                touchwin(content_win);
+                wnoutrefresh(content_win);
+                doupdate();
                 break;
             case 'q':
             case 'Q':
@@ -5215,8 +5224,9 @@ void ui_main_screen(int role) {
                 }
 
                 /* 重新刷新所有窗口 */
-                touchwin(stdscr);
-                refresh();
+                touchwin(content_win);
+                wnoutrefresh(content_win);
+                doupdate();
             }
             break;
             case 'q':
