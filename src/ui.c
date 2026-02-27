@@ -566,6 +566,10 @@ void ui_draw_box(WINDOW *win, const char *title) {
  * 功能: 正确关闭弹出窗口，避免屏幕残留
  */
 static void close_popup_window(WINDOW *popup, WINDOW *underlay) {
+    if (underlay == popup) {
+        underlay = NULL;
+    }
+
     if (popup != NULL) {
         werase(popup);
         wnoutrefresh(popup);
