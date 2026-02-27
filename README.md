@@ -363,9 +363,9 @@ Windows 用户使用 MinGW GCC 编译时，需要手动配置 PDCurses 库。
         * **功能**: 显示登录框，调用 Auth 模块验证用户身份。
     * `void ui_main_screen(int role)`
         * **功能**: 根据登录用户的角色（管理员/医生/患者）显示不同的主菜单和侧边栏。
-    * `void ui_show_message(const char *title, const char *message, int type)`
+    * `void ui_show_message(const char *title, const char *message, int type, WINDOW *underlay)`
         * **功能**: 显示通用消息弹窗（成功/错误/警告）。
-    * `int ui_confirm_dialog(const char *title, const char *message)`
+    * `int ui_confirm_dialog(const char *title, const char *message, WINDOW *underlay)`
         * **功能**: 显示 Yes/No 确认对话框。
     * `int ui_input_string(...)` / `ui_input_int(...)` / `ui_input_double(...)`
         * **功能**: 封装的输入函数，支持在指定窗口位置获取各种类型的输入。
