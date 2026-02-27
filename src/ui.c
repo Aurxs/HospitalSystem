@@ -1676,8 +1676,12 @@ int ui_modify_patient_form(WINDOW *parent_win, PatientNode *patient) {
                     PatientNode newInfo = make_patient(name, age, gender, phone, diagnosis, treatment);
                     modify_patient(g_patients, old_phone, newInfo);
                     save_patients(DATA_PATH_PATIENTS, g_patients);
-                    ui_show_message_with_underlay("成功", "患者信息修改成功", 1, form_win);
                     delwin(form_win);
+                    if (parent_win != NULL) {
+                        touchwin(parent_win);
+                        wrefresh(parent_win);
+                    }
+                    ui_show_message("成功", "患者信息修改成功", 1);
                     return 0;
                 }
                 break;
@@ -2312,8 +2316,12 @@ int ui_modify_doctor_form(WINDOW *parent_win, DoctorNode *doctor) {
                     DoctorNode newInfo = make_doctor(name, age, gender, department, phone, schedule);
                     modify_doctor(g_doctors, old_phone, newInfo);
                     save_doctors(DATA_PATH_DOCTORS, g_doctors);
-                    ui_show_message_with_underlay("成功", "医生信息修改成功", 1, form_win);
                     delwin(form_win);
+                    if (parent_win != NULL) {
+                        touchwin(parent_win);
+                        wrefresh(parent_win);
+                    }
+                    ui_show_message("成功", "医生信息修改成功", 1);
                     return 0;
                 }
                 break;
@@ -2823,8 +2831,12 @@ int ui_modify_drug_form(WINDOW *parent_win, DrugNode *drug) {
                     DrugNode newInfo = make_drug(name, spec, factory, price, stock);
                     modify_drug(g_drugs, old_name, newInfo);
                     save_drugs(DATA_PATH_DRUGS, g_drugs);
-                    ui_show_message_with_underlay("成功", "药品信息修改成功", 1, form_win);
                     delwin(form_win);
+                    if (parent_win != NULL) {
+                        touchwin(parent_win);
+                        wrefresh(parent_win);
+                    }
+                    ui_show_message("成功", "药品信息修改成功", 1);
                     return 0;
                 }
                 break;
@@ -3410,8 +3422,12 @@ int ui_modify_bill_form(WINDOW *parent_win, BillNode *bill) {
                     BillNode nb = make_bill(pn, item, a);
                     modify_bill(g_bills, old_pn, old_item, nb);
                     save_bills(DATA_PATH_BILLS, g_bills);
-                    ui_show_message_with_underlay("成功", "费用修改成功", 1, w);
                     delwin(w);
+                    if (parent_win != NULL) {
+                        touchwin(parent_win);
+                        wrefresh(parent_win);
+                    }
+                    ui_show_message("成功", "费用修改成功", 1);
                     return 0;
                 }
                 break;
@@ -3672,8 +3688,12 @@ int ui_modify_user_form(WINDOW *parent_win, AuthNode *user) {
                         AuthNode ni = make_user(user->username, pw, user->role);
                         modify_user(g_users, user->username, ni);
                         save_users(DATA_PATH_USERS, g_users);
-                        ui_show_message_with_underlay("成功", "密码修改成功", 1, w);
                         delwin(w);
+                        if (parent_win != NULL) {
+                            touchwin(parent_win);
+                            wrefresh(parent_win);
+                        }
+                        ui_show_message("成功", "密码修改成功", 1);
                         return 0;
                     }
                 }
